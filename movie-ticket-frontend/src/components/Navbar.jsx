@@ -53,6 +53,8 @@ function Navbar() {
             >
               Register
             </Link>
+            <Link to="/my-bookings"  style={{ color: "#fff", textDecoration: "none" }}
+            >My Bookings</Link>
           </>
         ) : (
           <button

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import API from "../api/axios";
 
 function TheatreSelection() {
+  const { id } = useParams(); // Movie ID
   const navigate = useNavigate();
 
   const [theatres, setTheatres] = useState([]);
@@ -47,10 +48,14 @@ function TheatreSelection() {
           >
             <h2>{theatre.name}</h2>
 
-            <p>{theatre.location}</p>
+            <p>{theatre.location || theatre.address}</p>
+
+            <p>{theatre.city}</p>
 
             <button
-              onClick={() => navigate(`/shows/${theatre._id}`)}
+              onClick={() =>
+                navigate(`/shows/${theatre._id}?movie=${id}`)
+              }
               style={{
                 padding: "10px 20px",
                 background: "#2563eb",

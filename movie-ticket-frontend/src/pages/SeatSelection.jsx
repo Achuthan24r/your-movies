@@ -1,13 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import API from "../api/axios";
 
 function SeatSelection() {
   const { showId } = useParams();
   const navigate = useNavigate();
 
-  const seats = Array.from({ length: 40 }, (_, i) => i + 1);
-
+  const [show, setShow] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
+
+  useEffect(() => {
+  const fetchShow = async () => {
+    try {
+      const res = await API.get(`/shows/${showId}`);
+
+      if (res.data.success) {
+        setShow(res.data.data);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load show");
+    }
+  };
+
+  fetchShow();
+}, [showId]);
 
   const toggleSeat = (seat) => {
     if (selectedSeats.includes(seat)) {
@@ -17,29 +34,34 @@ function SeatSelection() {
     }
   };
 
-  const proceed = () => {
-    if (selectedSeats.length === 0) {
-      alert("Please select at least one seat");
-      return;
-    }
+  if (!show) {
+    return (
+      <h2 style={{ textAlign: "center", marginTop: "50px" }}>
+        Loading...
+      </h2>
+    );
+  }
 
-    navigate("/payment", {
-      state: {
-        showId,
-        seats: selectedSeats,
-        total: selectedSeats.length * 200,
-      },
-    });
-  };
+  const seats = Array.from({ length: 50 }, (_, i) => i + 1);
 
   return (
     <div style={{ padding: "30px" }}>
-      <h1>Select Your Seats</h1>
+      <h1>Select Seats</h1>
+
+      <h3>{show.movie?.title}</h3>
+
+      <p>
+        <strong>Time:</strong> {show.showTime}
+      </p>
+
+      <p>
+        <strong>Ticket Price:</strong> ₹{show.ticketPrice}
+      </p>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(8,60px)",
+          gridTemplateColumns: "repeat(10,60px)",
           gap: "10px",
           marginTop: "30px",
         }}
@@ -49,15 +71,13 @@ function SeatSelection() {
             key={seat}
             onClick={() => toggleSeat(seat)}
             style={{
-              height: "50px",
+              padding: "12px",
               border: "none",
-              borderRadius: "8px",
+              borderRadius: "5px",
               cursor: "pointer",
               background: selectedSeats.includes(seat)
                 ? "#16a34a"
-                : "#d1d5db",
-              color: "#000",
-              fontWeight: "bold",
+                : "#ddd",
             }}
           >
             {seat}
@@ -65,17 +85,28 @@ function SeatSelection() {
         ))}
       </div>
 
-      <h2 style={{ marginTop: "30px" }}>
+      <h3 style={{ marginTop: "30px" }}>
         Selected Seats: {selectedSeats.join(", ") || "None"}
+      </h3>
+
+      <h2>
+        Total: ₹{selectedSeats.length * show.ticketPrice}
       </h2>
 
-      <h2>Total : ₹{selectedSeats.length * 200}</h2>
-
       <button
-        onClick={proceed}
+        disabled={selectedSeats.length === 0}
+        onClick={() =>
+          navigate("/payment", {
+            state: {
+              show,
+              seats: selectedSeats,
+              total: selectedSeats.length * show.ticketPrice,
+            },
+          })
+        }
         style={{
+          padding: "15px 30px",
           marginTop: "20px",
-          padding: "12px 25px",
           background: "#2563eb",
           color: "#fff",
           border: "none",
@@ -83,7 +114,7 @@ function SeatSelection() {
           cursor: "pointer",
         }}
       >
-        Proceed to Payment
+        Continue to Payment
       </button>
     </div>
   );

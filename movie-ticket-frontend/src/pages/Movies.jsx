@@ -8,58 +8,41 @@ function Movies() {
 
   const navigate = useNavigate();
 
-  const fetchMovies = async () => {
-    try {
-      const res = await API.get("/movies");
-      setMovies(res.data.data);
-    } catch (error) {
-      console.error(error);
-      alert("Failed to load movies");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchMovies();
+    const loadMovies = async () => {
+      try {
+        const res = await API.get("/movies");
+
+        if (res.data.success) {
+          setMovies(res.data.movies);
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Failed to load movies");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMovies();
   }, []);
 
   if (loading) {
-    return (
-      <h2
-        style={{
-          textAlign: "center",
-          marginTop: "50px",
-        }}
-      >
-        Loading Movies...
-      </h2>
-    );
+    return <h2 style={{ textAlign: "center" }}>Loading Movies...</h2>;
   }
 
   return (
-    <div
-      style={{
-        padding: "30px",
-      }}
-    >
-      <h1
-        style={{
-          textAlign: "center",
-          marginBottom: "30px",
-        }}
-      >
-        🎬 Now Showing
-      </h1>
+    <div style={{ padding: "30px" }}>
+      <h1 style={{ textAlign: "center" }}>🎬 Now Showing</h1>
 
       {movies.length === 0 ? (
-        <h3 style={{ textAlign: "center" }}>No Movies Available</h3>
+        <h3>No Movies Available</h3>
       ) : (
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))",
-            gap: "25px",
+            gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
+            gap: "20px",
           }}
         >
           {movies.map((movie) => (
@@ -68,15 +51,11 @@ function Movies() {
               style={{
                 border: "1px solid #ddd",
                 borderRadius: "10px",
-                padding: "20px",
-                boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+                padding: "15px",
               }}
             >
               <img
-                src={
-                  movie.poster ||
-                  "https://via.placeholder.com/300x400?text=Movie+Poster"
-                }
+                src={movie.poster}
                 alt={movie.title}
                 style={{
                   width: "100%",
@@ -88,29 +67,18 @@ function Movies() {
 
               <h2>{movie.title}</h2>
 
-              <p>
-                <strong>Language:</strong> {movie.language}
-              </p>
+              <p>{movie.genre}</p>
 
-              <p>
-                <strong>Genre:</strong> {movie.genre}
-              </p>
+              <p>{movie.language}</p>
 
-              <p>
-                <strong>Duration:</strong> {movie.duration} mins
-              </p>
+              <p>{movie.duration} mins</p>
 
               <button
                 onClick={() => navigate(`/movie/${movie._id}`)}
                 style={{
                   width: "100%",
-                  padding: "12px",
-                  background: "#2563eb",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "5px",
+                  padding: "10px",
                   cursor: "pointer",
-                  marginTop: "15px",
                 }}
               >
                 Book Now
