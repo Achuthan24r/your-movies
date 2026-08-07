@@ -5,24 +5,20 @@ function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const res = await API.get("/bookings/my-bookings");
+ useEffect(() => {
+  const fetchBookings = async () => {
+    try {
+      const res = await API.get("/bookings/my-bookings");
+      setBookings(res.data.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (res.data.success) {
-          setBookings(res.data.data);
-        }
-      } catch (err) {
-        console.error(err);
-        alert("Failed to load bookings");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBookings();
-  }, []);
+  fetchBookings();
+}, []);
 
   if (loading) {
     return <h2 style={{ textAlign: "center" }}>Loading...</h2>;

@@ -42,7 +42,7 @@ function App() {
 
        <Route path="/payment" element={<Payment />} />
        <Route path="/ticket" element={<Ticket />} />
-          <Route path="/my-bookings" element={<MyBookings />} />
+      <Route path="/my-bookings" element={<MyBookings />} />
         <Route path="/login" element={<Login />} />
 
         <Route path="/register" element={<Register />} />

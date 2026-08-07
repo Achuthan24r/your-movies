@@ -7,7 +7,14 @@ function Navbar() {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    alert("Logged Out Successfully");
+
     navigate("/login");
+
+    // Refresh Navbar
+    window.location.reload();
   };
 
   return (
@@ -18,10 +25,9 @@ function Navbar() {
         alignItems: "center",
         padding: "15px 30px",
         background: "#111827",
-        color: "#fff",
       }}
     >
-      <h2>🎬 Movie Ticket Booking</h2>
+      <h2 style={{ color: "#fff" }}>🎬 Movie Ticket Booking</h2>
 
       <div
         style={{
@@ -30,11 +36,17 @@ function Navbar() {
           alignItems: "center",
         }}
       >
-        <Link to="/" style={{ color: "#fff", textDecoration: "none" }}>
+        <Link
+          to="/"
+          style={{ color: "#fff", textDecoration: "none" }}
+        >
           Home
         </Link>
 
-        <Link to="/movies" style={{ color: "#fff", textDecoration: "none" }}>
+        <Link
+          to="/movies"
+          style={{ color: "#fff", textDecoration: "none" }}
+        >
           Movies
         </Link>
 
@@ -53,23 +65,30 @@ function Navbar() {
             >
               Register
             </Link>
-            <Link to="/my-bookings"  style={{ color: "#fff", textDecoration: "none" }}
-            >My Bookings</Link>
           </>
         ) : (
-          <button
-            onClick={logout}
-            style={{
-              background: "#dc2626",
-              color: "#fff",
-              border: "none",
-              padding: "8px 15px",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            Logout
-          </button>
+          <>
+            <Link
+              to="/my-bookings"
+              style={{ color: "#fff", textDecoration: "none" }}
+            >
+              🎟 My Bookings
+            </Link>
+
+            <button
+              onClick={logout}
+              style={{
+                background: "#dc2626",
+                color: "#fff",
+                border: "none",
+                padding: "8px 15px",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              Logout
+            </button>
+          </>
         )}
       </div>
     </nav>
