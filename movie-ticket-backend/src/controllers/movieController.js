@@ -1,126 +1,122 @@
 const Movie = require("../models/Movie");
 
-const addMovie = async (req, res) => {
-  try {
-    const movie = await Movie.create(req.body);
-
-    return res.status(201).json({
-      success: true,
-      message: "Movie added successfully",
-      movie
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
+// =========================
+// Get All Movies
+// =========================
 const getMovies = async (req, res) => {
   try {
-    const movies = await Movie.find();
-
-    return res.status(200).json({
-      success: true,
-      movies
+    const movies = await Movie.find().sort({
+      createdAt: -1,
     });
 
+    res.status(200).json({
+      success: true,
+      data: movies,
+    });
   } catch (error) {
-    return res.status(500).json({
+    console.error("Get Movies Error:", error);
+
+    res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
 
-const getMovie = async (req, res) => {
+// =========================
+// Get Movie By ID
+// =========================
+const getMovieById = async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.id);
 
     if (!movie) {
       return res.status(404).json({
         success: false,
-        message: "Movie not found"
+        message: "Movie Not Found",
       });
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      movie
+      data: movie,
     });
-
   } catch (error) {
-    return res.status(500).json({
+    console.error("Get Movie By ID Error:", error);
+
+    res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
 
-const updateMovie = async (req, res) => {
+// =========================
+// Add Movie
+// =========================
+const addMovie = async (req, res) => {
   try {
-    const movie = await Movie.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true
-      }
-    );
-
-    if (!movie) {
-      return res.status(404).json({
-        success: false,
-        message: "Movie not found"
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Movie updated successfully",
-      movie
+    const movie = await Movie.create({
+      title: req.body.title,
+      description: req.body.description,
+      genre: req.body.genre,
+      language: req.body.language,
+      duration: req.body.duration,
+      releaseDate: req.body.releaseDate,
+      poster: req.body.poster || "",
+      trailer: req.body.trailer || "",
+      rating: req.body.rating || 0,
+      status: req.body.status || "Coming Soon",
     });
 
+    res.status(201).json({
+      success: true,
+      message: "Movie Added Successfully",
+      data: movie,
+    });
   } catch (error) {
-    return res.status(500).json({
+    console.error("Add Movie Error:", error);
+
+    res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
 
+// =========================
+// Delete Movie
+// =========================
 const deleteMovie = async (req, res) => {
   try {
-    const movie = await Movie.findByIdAndDelete(
-      req.params.id
-    );
+    const movie = await Movie.findById(req.params.id);
 
     if (!movie) {
       return res.status(404).json({
         success: false,
-        message: "Movie not found"
+        message: "Movie Not Found",
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      message: "Movie deleted successfully"
-    });
+    await Movie.findByIdAndDelete(req.params.id);
 
+    res.status(200).json({
+      success: true,
+      message: "Movie Deleted Successfully",
+    });
   } catch (error) {
-    return res.status(500).json({
+    console.error("Delete Movie Error:", error);
+
+    res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
 
 module.exports = {
-  addMovie,
   getMovies,
-  getMovie,
-  updateMovie,
-  deleteMovie
+  getMovieById,
+  addMovie,
+  deleteMovie,
 };
