@@ -9,12 +9,72 @@ const createBooking = async (req, res) => {
     console.log("Request Body:", req.body);
     console.log("Logged-in User:", req.user);
 
+    const {
+      show,
+      seats,
+      totalSeats,
+      totalAmount,
+    } = req.body;
+
+    // =========================
+    // Basic validation
+    // =========================
+    if (!show || !seats || seats.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Show and seats are required",
+      });
+    }
+
+    // =========================
+    // Check total seats
+    // =========================
+    if (totalSeats !== seats.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid total seats",
+      });
+    }
+
+    // =========================
+    // Check if seats are already booked
+    // =========================
+    const existingBookings = await Booking.find({
+      show: show,
+      bookingStatus: "Booked",
+      seats: {
+        $in: seats,
+      },
+    });
+
+    if (existingBookings.length > 0) {
+      const bookedSeats = [];
+
+      existingBookings.forEach((booking) => {
+        booking.seats.forEach((seat) => {
+          if (seats.includes(seat)) {
+            if (!bookedSeats.includes(seat)) {
+              bookedSeats.push(seat);
+            }
+          }
+        });
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: `Seat(s) already booked: ${bookedSeats.join(", ")}`,
+      });
+    }
+
+    // =========================
+    // Create booking
+    // =========================
     const booking = await Booking.create({
       user: req.user.id,
-      show: req.body.show,
-      seats: req.body.seats,
-      totalSeats: req.body.totalSeats,
-      totalAmount: req.body.totalAmount,
+      show,
+      seats,
+      totalSeats,
+      totalAmount,
       paymentStatus: "Paid",
       bookingStatus: "Booked",
     });
@@ -26,6 +86,7 @@ const createBooking = async (req, res) => {
       message: "Booking Created Successfully",
       data: booking,
     });
+
   } catch (error) {
     console.error("Booking Error:", error);
 
@@ -34,7 +95,7 @@ const createBooking = async (req, res) => {
       message: error.message,
     });
   }
-};;
+};
 
 // =====================================================
 // GET ALL BOOKINGS - ADMIN

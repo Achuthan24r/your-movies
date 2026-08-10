@@ -4,43 +4,96 @@ import API from "../api/axios";
 function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
+  // ==========================================
+  // Cancel Booking
+  // ==========================================
+  const handleCancel = async (bookingId) => {
+    const confirmCancel = window.confirm(
+      "Are you sure you want to cancel this booking?"
+    );
+
+    if (!confirmCancel) {
+      return;
+    }
+
+    try {
+      const res = await API.put(
+        `/bookings/cancel/${bookingId}`
+      );
+
+      if (res.data.success) {
+        alert("Booking Cancelled Successfully");
+
+        setBookings((prevBookings) =>
+          prevBookings.map((booking) =>
+            booking._id === bookingId
+              ? {
+                  ...booking,
+                  bookingStatus: "Cancelled",
+                }
+              : booking
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Cancel Booking Error:", err);
+
+      alert(
+        err.response?.data?.message ||
+          "Failed to cancel booking"
+      );
+    }
+  };
+
+  // ==========================================
+  // Get My Bookings
+  // ==========================================
   useEffect(() => {
-    let cancelled = false;
+    let ignore = false;
 
-    (async () => {
+    const loadBookings = async () => {
       try {
-        setLoading(true);
-        setError("");
+        const res = await API.get(
+          "/bookings/my-bookings"
+        );
 
-        const res = await API.get("/bookings/my-bookings");
-
-        if (!cancelled) {
-          setBookings(res.data?.data || []);
+        if (!ignore && res.data.success) {
+          setBookings(res.data.data || []);
         }
       } catch (err) {
-        console.error("My Bookings Error:", err);
+        console.error("Fetch Bookings Error:", err);
 
-        if (!cancelled) {
-          setError(
-            err.response?.data?.message ||
-              "Failed to load your bookings"
+        if (
+          !ignore &&
+          err.response?.status === 401
+        ) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+
+          alert(
+            "Your session has expired. Please login again."
           );
+
+          window.location.href = "/login";
         }
       } finally {
-        if (!cancelled) {
+        if (!ignore) {
           setLoading(false);
         }
       }
-    })();
+    };
+
+    loadBookings();
 
     return () => {
-      cancelled = true;
+      ignore = true;
     };
   }, []);
 
+  // ==========================================
   // Loading
+  // ==========================================
   if (loading) {
     return (
       <div
@@ -54,52 +107,13 @@ function MyBookings() {
     );
   }
 
-  // Error
-  if (error) {
-    return (
-      <div
-        style={{
-          maxWidth: "600px",
-          margin: "50px auto",
-          padding: "30px",
-          textAlign: "center",
-          border: "1px solid #ddd",
-          borderRadius: "10px",
-        }}
-      >
-        <h2>Unable to Load Bookings</h2>
-
-        <p
-          style={{
-            color: "red",
-            marginTop: "15px",
-          }}
-        >
-          {error}
-        </p>
-
-        <button
-          onClick={() => window.location.reload()}
-          style={{
-            marginTop: "20px",
-            padding: "10px 20px",
-            background: "#2563eb",
-            color: "#fff",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-        >
-          Try Again
-        </button>
-      </div>
-    );
-  }
-
+  // ==========================================
+  // My Bookings
+  // ==========================================
   return (
     <div
       style={{
-        maxWidth: "900px",
+        maxWidth: "1000px",
         margin: "40px auto",
         padding: "20px",
       }}
@@ -124,8 +138,8 @@ function MyBookings() {
         >
           <h2>No Bookings Found</h2>
 
-          <p style={{ color: "#666" }}>
-            You have not booked any movie tickets yet.
+          <p>
+            You haven't booked any movie tickets yet.
           </p>
         </div>
       ) : (
@@ -137,118 +151,139 @@ function MyBookings() {
               borderRadius: "10px",
               padding: "25px",
               marginBottom: "20px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-              background: "#fff",
+              boxShadow:
+                "0 2px 8px rgba(0,0,0,0.08)",
             }}
           >
             {/* Movie */}
-            <h2
-              style={{
-                marginBottom: "20px",
-              }}
-            >
-              🎬 {booking.show?.movie?.title || "Movie"}
+            <h2>
+              🎬{" "}
+              {booking.show?.movie?.title ||
+                "Movie"}
             </h2>
 
-            {/* Movie Details */}
+            {/* Language */}
             <p>
               <strong>Language:</strong>{" "}
-              {booking.show?.movie?.language || "N/A"}
+              {booking.show?.movie?.language ||
+                "N/A"}
             </p>
 
+            {/* Theatre */}
             <p>
               <strong>Theatre:</strong>{" "}
-              {booking.show?.screen?.theatre?.name || "N/A"}
+              {booking.show?.screen?.theatre?.name ||
+                "N/A"}
             </p>
 
-            <p>
-              <strong>City:</strong>{" "}
-              {booking.show?.screen?.theatre?.city || "N/A"}
-            </p>
+            {/* City */}
+            {booking.show?.screen?.theatre?.city && (
+              <p>
+                <strong>City:</strong>{" "}
+                {booking.show.screen.theatre.city}
+              </p>
+            )}
 
+            {/* Screen */}
             <p>
               <strong>Screen:</strong>{" "}
-              {booking.show?.screen?.name || "N/A"}
+              {booking.show?.screen?.name ||
+                "N/A"}
             </p>
 
             {/* Date */}
-            <p>
-              <strong>Show Date:</strong>{" "}
-              {booking.show?.showDate
-                ? new Date(
-                    booking.show.showDate
-                  ).toLocaleDateString()
-                : "N/A"}
-            </p>
+            {booking.show?.showDate && (
+              <p>
+                <strong>Show Date:</strong>{" "}
+                {new Date(
+                  booking.show.showDate
+                ).toLocaleDateString()}
+              </p>
+            )}
 
             {/* Time */}
-            <p>
-              <strong>Show Time:</strong>{" "}
-              {booking.show?.showTime || "N/A"}
-            </p>
+            {booking.show?.showTime && (
+              <p>
+                <strong>Show Time:</strong>{" "}
+                {booking.show.showTime}
+              </p>
+            )}
 
             {/* Seats */}
             <p>
               <strong>Seats:</strong>{" "}
-              {booking.seats?.length > 0
-                ? booking.seats.join(", ")
-                : "N/A"}
+              {booking.seats?.join(", ") ||
+                "N/A"}
             </p>
 
             {/* Total Seats */}
             <p>
               <strong>Total Seats:</strong>{" "}
-              {booking.totalSeats || booking.seats?.length || 0}
+              {booking.totalSeats}
             </p>
 
             {/* Amount */}
             <p>
-              <strong>Total Amount:</strong>{" "}
-              ₹{booking.totalAmount}
+              <strong>Total Amount:</strong> ₹
+              {booking.totalAmount}
             </p>
 
-            {/* Payment Status */}
+            {/* Payment */}
             <p>
               <strong>Payment:</strong>{" "}
-              <span
-                style={{
-                  color:
-                    booking.paymentStatus === "Paid"
-                      ? "green"
-                      : "orange",
-                  fontWeight: "bold",
-                }}
-              >
-                {booking.paymentStatus || "Pending"}
-              </span>
+              {booking.paymentStatus}
             </p>
 
             {/* Booking Status */}
             <p>
-              <strong>Booking Status:</strong>{" "}
+              <strong>Status:</strong>{" "}
               <span
                 style={{
-                  color:
-                    booking.bookingStatus === "Booked"
-                      ? "green"
-                      : "red",
                   fontWeight: "bold",
+                  color:
+                    booking.bookingStatus ===
+                    "Cancelled"
+                      ? "#dc2626"
+                      : "#16a34a",
                 }}
               >
                 {booking.bookingStatus}
               </span>
             </p>
 
-            {/* Booking ID */}
-            <p
+            {/* Cancel Button */}
+            <button
+              onClick={() =>
+                handleCancel(booking._id)
+              }
+              disabled={
+                booking.bookingStatus ===
+                "Cancelled"
+              }
               style={{
-                fontSize: "12px",
-                color: "#777",
                 marginTop: "15px",
+                padding: "10px 20px",
+                background:
+                  booking.bookingStatus ===
+                  "Cancelled"
+                    ? "#999"
+                    : "#dc2626",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px",
+                cursor:
+                  booking.bookingStatus ===
+                  "Cancelled"
+                    ? "not-allowed"
+                    : "pointer",
+                fontSize: "15px",
               }}
             >
-              Booking ID: {booking._id}
-            </p>
+              {booking.bookingStatus ===
+              "Cancelled"
+                ? "Cancelled"
+                : "Cancel Booking"}
+            </button>
           </div>
         ))
       )}
