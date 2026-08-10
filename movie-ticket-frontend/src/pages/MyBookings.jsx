@@ -1,294 +1,315 @@
 import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import API from "../api/axios";
 
-function MyBookings() {
-  const [bookings, setBookings] = useState([]);
+function MovieDetails() {
+  const { id } = useParams();
+
+  const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // ==========================================
-  // Cancel Booking
-  // ==========================================
-  const handleCancel = async (bookingId) => {
-    const confirmCancel = window.confirm(
-      "Are you sure you want to cancel this booking?"
-    );
-
-    if (!confirmCancel) {
-      return;
-    }
-
-    try {
-      const res = await API.put(
-        `/bookings/cancel/${bookingId}`
-      );
-
-      if (res.data.success) {
-        alert("Booking Cancelled Successfully");
-
-        setBookings((prevBookings) =>
-          prevBookings.map((booking) =>
-            booking._id === bookingId
-              ? {
-                  ...booking,
-                  bookingStatus: "Cancelled",
-                }
-              : booking
-          )
-        );
-      }
-    } catch (err) {
-      console.error("Cancel Booking Error:", err);
-
-      alert(
-        err.response?.data?.message ||
-          "Failed to cancel booking"
-      );
-    }
-  };
-
-  // ==========================================
-  // Get My Bookings
-  // ==========================================
   useEffect(() => {
-    let ignore = false;
+    let mounted = true;
 
-    const loadBookings = async () => {
+    const fetchMovie = async () => {
       try {
-        const res = await API.get(
-          "/bookings/my-bookings"
-        );
+        const res = await API.get(`/movies/${id}`);
 
-        if (!ignore && res.data.success) {
-          setBookings(res.data.data || []);
+        if (mounted) {
+          setMovie(res.data.data);
         }
       } catch (err) {
-        console.error("Fetch Bookings Error:", err);
+        console.error("Failed to fetch movie:", err);
 
-        if (
-          !ignore &&
-          err.response?.status === 401
-        ) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-
-          alert(
-            "Your session has expired. Please login again."
-          );
-
-          window.location.href = "/login";
+        if (mounted) {
+          setError("Failed to load movie details");
         }
       } finally {
-        if (!ignore) {
+        if (mounted) {
           setLoading(false);
         }
       }
     };
 
-    loadBookings();
+    if (id) {
+      fetchMovie();
+    }
 
     return () => {
-      ignore = true;
+      mounted = false;
     };
-  }, []);
+  }, [id]);
 
-  // ==========================================
-  // Loading
-  // ==========================================
   if (loading) {
     return (
       <div
         style={{
-          textAlign: "center",
-          marginTop: "50px",
+          minHeight: "80vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        <h2>Loading...</h2>
+        <h2>Loading movie...</h2>
       </div>
     );
   }
 
-  // ==========================================
-  // My Bookings
-  // ==========================================
+  if (error) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          padding: "50px",
+        }}
+      >
+        <h2>{error}</h2>
+
+        <Link to="/movies">
+          <button
+            style={{
+              padding: "12px 25px",
+              background: "#2563eb",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+            }}
+          >
+            Back to Movies
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (!movie) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          padding: "50px",
+        }}
+      >
+        <h2>Movie Not Found</h2>
+
+        <Link to="/movies">
+          <button
+            style={{
+              padding: "12px 25px",
+              background: "#2563eb",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+            }}
+          >
+            Back to Movies
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
-        maxWidth: "1000px",
-        margin: "40px auto",
-        padding: "20px",
+        padding: "40px",
+        maxWidth: "1100px",
+        margin: "0 auto",
       }}
     >
-      <h1
+      {/* BACK BUTTON */}
+      <Link
+        to="/movies"
         style={{
-          textAlign: "center",
-          marginBottom: "30px",
+          textDecoration: "none",
         }}
       >
-        🎫 My Bookings
-      </h1>
-
-      {bookings.length === 0 ? (
-        <div
+        <button
           style={{
-            textAlign: "center",
-            padding: "40px",
-            border: "1px solid #ddd",
-            borderRadius: "10px",
+            padding: "10px 20px",
+            marginBottom: "30px",
+            background: "#374151",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
           }}
         >
-          <h2>No Bookings Found</h2>
+          ← Back to Movies
+        </button>
+      </Link>
 
-          <p>
-            You haven't booked any movie tickets yet.
-          </p>
-        </div>
-      ) : (
-        bookings.map((booking) => (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "minmax(250px, 350px) 1fr",
+          gap: "40px",
+          alignItems: "start",
+        }}
+      >
+        {/* POSTER */}
+        <div>
+          {movie.poster ? (
+            <img
+              src={movie.poster}
+              alt={movie.title}
+              style={{
+                width: "100%",
+                maxWidth: "350px",
+                height: "500px",
+                objectFit: "cover",
+                borderRadius: "12px",
+                display: "block",
+              }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                e.currentTarget.nextSibling.style.display =
+                  "flex";
+              }}
+            />
+          ) : null}
+
+          {/* POSTER PLACEHOLDER */}
           <div
-            key={booking._id}
             style={{
-              border: "1px solid #ddd",
-              borderRadius: "10px",
-              padding: "25px",
-              marginBottom: "20px",
-              boxShadow:
-                "0 2px 8px rgba(0,0,0,0.08)",
+              width: "100%",
+              maxWidth: "350px",
+              height: "500px",
+              display: movie.poster ? "none" : "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#e5e7eb",
+              borderRadius: "12px",
+              fontSize: "80px",
             }}
           >
-            {/* Movie */}
-            <h2>
-              🎬{" "}
-              {booking.show?.movie?.title ||
-                "Movie"}
-            </h2>
+            🎬
+          </div>
+        </div>
 
-            {/* Language */}
+        {/* MOVIE DETAILS */}
+        <div>
+          <h1
+            style={{
+              fontSize: "2.5rem",
+              marginTop: 0,
+              marginBottom: "15px",
+            }}
+          >
+            {movie.title}
+          </h1>
+
+          <p
+            style={{
+              fontSize: "18px",
+              lineHeight: "1.7",
+              color: "#555",
+            }}
+          >
+            {movie.description || "No description available."}
+          </p>
+
+          <div
+            style={{
+              marginTop: "25px",
+              lineHeight: "2",
+            }}
+          >
             <p>
-              <strong>Language:</strong>{" "}
-              {booking.show?.movie?.language ||
-                "N/A"}
+              <strong>🎭 Genre:</strong>{" "}
+              {movie.genre || "N/A"}
             </p>
 
-            {/* Theatre */}
             <p>
-              <strong>Theatre:</strong>{" "}
-              {booking.show?.screen?.theatre?.name ||
-                "N/A"}
+              <strong>🗣️ Language:</strong>{" "}
+              {movie.language || "N/A"}
             </p>
 
-            {/* City */}
-            {booking.show?.screen?.theatre?.city && (
-              <p>
-                <strong>City:</strong>{" "}
-                {booking.show.screen.theatre.city}
-              </p>
-            )}
-
-            {/* Screen */}
             <p>
-              <strong>Screen:</strong>{" "}
-              {booking.show?.screen?.name ||
-                "N/A"}
+              <strong>⏱️ Duration:</strong>{" "}
+              {movie.duration
+                ? `${movie.duration} minutes`
+                : "N/A"}
             </p>
 
-            {/* Date */}
-            {booking.show?.showDate && (
-              <p>
-                <strong>Show Date:</strong>{" "}
-                {new Date(
-                  booking.show.showDate
-                ).toLocaleDateString()}
-              </p>
-            )}
-
-            {/* Time */}
-            {booking.show?.showTime && (
-              <p>
-                <strong>Show Time:</strong>{" "}
-                {booking.show.showTime}
-              </p>
-            )}
-
-            {/* Seats */}
             <p>
-              <strong>Seats:</strong>{" "}
-              {booking.seats?.join(", ") ||
-                "N/A"}
+              <strong>⭐ Rating:</strong>{" "}
+              {movie.rating ?? 0}
             </p>
 
-            {/* Total Seats */}
             <p>
-              <strong>Total Seats:</strong>{" "}
-              {booking.totalSeats}
+              <strong>📅 Release Date:</strong>{" "}
+              {movie.releaseDate
+                ? new Date(
+                    movie.releaseDate
+                  ).toLocaleDateString()
+                : "N/A"}
             </p>
 
-            {/* Amount */}
             <p>
-              <strong>Total Amount:</strong> ₹
-              {booking.totalAmount}
+              <strong>📌 Status:</strong>{" "}
+              {movie.status || "Coming Soon"}
             </p>
+          </div>
 
-            {/* Payment */}
-            <p>
-              <strong>Payment:</strong>{" "}
-              {booking.paymentStatus}
-            </p>
-
-            {/* Booking Status */}
-            <p>
-              <strong>Status:</strong>{" "}
-              <span
-                style={{
-                  fontWeight: "bold",
-                  color:
-                    booking.bookingStatus ===
-                    "Cancelled"
-                      ? "#dc2626"
-                      : "#16a34a",
-                }}
-              >
-                {booking.bookingStatus}
-              </span>
-            </p>
-
-            {/* Cancel Button */}
-            <button
-              onClick={() =>
-                handleCancel(booking._id)
-              }
-              disabled={
-                booking.bookingStatus ===
-                "Cancelled"
-              }
+          {/* TRAILER */}
+          {movie.trailer ? (
+            <a
+              href={movie.trailer}
+              target="_blank"
+              rel="noreferrer"
               style={{
-                marginTop: "15px",
-                padding: "10px 20px",
-                background:
-                  booking.bookingStatus ===
-                  "Cancelled"
-                    ? "#999"
-                    : "#dc2626",
-                color: "#fff",
-                border: "none",
-                borderRadius: "5px",
-                cursor:
-                  booking.bookingStatus ===
-                  "Cancelled"
-                    ? "not-allowed"
-                    : "pointer",
-                fontSize: "15px",
+                textDecoration: "none",
               }}
             >
-              {booking.bookingStatus ===
-              "Cancelled"
-                ? "Cancelled"
-                : "Cancel Booking"}
+              <button
+                style={{
+                  padding: "12px 25px",
+                  marginTop: "15px",
+                  marginRight: "10px",
+                  background: "#dc2626",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                }}
+              >
+                ▶ Watch Trailer
+              </button>
+            </a>
+          ) : null}
+
+          {/* THEATRE BUTTON */}
+          <Link
+            to={`/movie/${movie._id}/theatres`}
+            style={{
+              textDecoration: "none",
+            }}
+          >
+            <button
+              style={{
+                padding: "12px 25px",
+                marginTop: "15px",
+                background: "#2563eb",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "16px",
+              }}
+            >
+              🎟️ Book Tickets
             </button>
-          </div>
-        ))
-      )}
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
 
-export default MyBookings;
+export default MovieDetails;
