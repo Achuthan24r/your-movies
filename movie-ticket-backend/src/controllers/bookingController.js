@@ -7,151 +7,34 @@ const Show = require("../models/Show");
 const createBooking = async (req, res) => {
   try {
     console.log("Request Body:", req.body);
+    console.log("Logged-in User:", req.user);
 
-    const {
-      show,
-      seats,
-      totalSeats,
-      totalAmount,
-    } = req.body;
-
-    // ---------------------------------------------
-    // Validate request
-    // ---------------------------------------------
-    if (!show) {
-      return res.status(400).json({
-        success: false,
-        message: "Show is required",
-      });
-    }
-
-    if (!Array.isArray(seats) || seats.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Please select at least one seat",
-      });
-    }
-
-    if (totalAmount === undefined || totalAmount === null) {
-      return res.status(400).json({
-        success: false,
-        message: "Total amount is required",
-      });
-    }
-
-    // Always calculate this from seats.
-    // Don't trust the frontend value.
-    const calculatedTotalSeats = seats.length;
-
-    // ---------------------------------------------
-    // Find show
-    // ---------------------------------------------
-    const showData = await Show.findById(show);
-
-    if (!showData) {
-      return res.status(404).json({
-        success: false,
-        message: "Show not found",
-      });
-    }
-
-    // ---------------------------------------------
-    // Check show status
-    // ---------------------------------------------
-    if (showData.status === "Cancelled") {
-      return res.status(400).json({
-        success: false,
-        message: "This show has been cancelled",
-      });
-    }
-
-    // ---------------------------------------------
-    // Check available seat count
-    // ---------------------------------------------
-    if (showData.availableSeats < calculatedTotalSeats) {
-      return res.status(400).json({
-        success: false,
-        message: "Not enough seats available",
-      });
-    }
-
-    // ---------------------------------------------
-    // Check duplicate seats
-    // ---------------------------------------------
-    const existingBookings = await Booking.find({
-      show: show,
-      bookingStatus: "Booked",
-      seats: {
-        $in: seats,
-      },
-    });
-
-    if (existingBookings.length > 0) {
-      const bookedSeats = existingBookings.flatMap(
-        (booking) => booking.seats
-      );
-
-      const alreadyBooked = seats.filter((seat) =>
-        bookedSeats.includes(seat)
-      );
-
-      // Remove duplicates from response
-      const uniqueBookedSeats = [
-        ...new Set(alreadyBooked),
-      ];
-
-      return res.status(400).json({
-        success: false,
-        message: `These seats are already booked: ${uniqueBookedSeats.join(
-          ", "
-        )}`,
-      });
-    }
-
-    // ---------------------------------------------
-    // Create booking
-    // ---------------------------------------------
     const booking = await Booking.create({
       user: req.user.id,
-      show: show,
-      seats: seats,
-      totalSeats: calculatedTotalSeats,
-      totalAmount: totalAmount,
+      show: req.body.show,
+      seats: req.body.seats,
+      totalSeats: req.body.totalSeats,
+      totalAmount: req.body.totalAmount,
       paymentStatus: "Paid",
       bookingStatus: "Booked",
     });
 
-    // ---------------------------------------------
-    // Reduce available seats
-    // ---------------------------------------------
-    showData.availableSeats =
-      showData.availableSeats - calculatedTotalSeats;
-
-    await showData.save();
-
     console.log("Created Booking:", booking);
-    console.log(
-      "Remaining Seats:",
-      showData.availableSeats
-    );
 
-    // ---------------------------------------------
-    // Response
-    // ---------------------------------------------
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: "Booking Created Successfully",
       data: booking,
     });
   } catch (error) {
-    console.error("CREATE BOOKING ERROR:", error);
+    console.error("Booking Error:", error);
 
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message,
     });
   }
-};
+};;
 
 // =====================================================
 // GET ALL BOOKINGS - ADMIN
