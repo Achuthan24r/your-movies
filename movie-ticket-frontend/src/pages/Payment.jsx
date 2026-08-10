@@ -17,16 +17,28 @@ function Payment() {
 
   const handlePayment = async () => {
     try {
+      // Check login
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please login before booking.");
+        navigate("/login");
+        return;
+      }
+
       const bookingData = {
         show: show._id,
-        seats,
+        seats: seats,
         totalSeats: seats.length,
         totalAmount: total,
       };
 
       console.log("Sending Booking:", bookingData);
 
-      const res = await API.post("/bookings", bookingData);
+      const res = await API.post(
+        "/bookings",
+        bookingData
+      );
 
       if (res.data.success) {
         alert("Booking Successful!");
@@ -41,8 +53,12 @@ function Payment() {
         });
       }
     } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "Booking Failed");
+      console.error("Booking Error:", err);
+
+      alert(
+        err.response?.data?.message ||
+          "Booking Failed"
+      );
     }
   };
 
@@ -54,33 +70,45 @@ function Payment() {
         padding: "30px",
         border: "1px solid #ddd",
         borderRadius: "10px",
-        boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+        boxShadow:
+          "0 0 10px rgba(0,0,0,0.1)",
       }}
     >
-      <h1 style={{ textAlign: "center" }}>💳 Payment</h1>
+      <h1 style={{ textAlign: "center" }}>
+        💳 Payment
+      </h1>
 
       <hr />
 
-      <h2>{show.movie?.title}</h2>
+      <h2>
+        {show.movie?.title}
+      </h2>
 
       <p>
         <strong>Show Date:</strong>{" "}
-        {new Date(show.showDate).toLocaleDateString()}
+        {new Date(
+          show.showDate
+        ).toLocaleDateString()}
       </p>
 
       <p>
-        <strong>Show Time:</strong> {show.showTime}
+        <strong>Show Time:</strong>{" "}
+        {show.showTime}
       </p>
 
       <p>
-        <strong>Selected Seats:</strong> {seats.join(", ")}
+        <strong>Selected Seats:</strong>{" "}
+        {seats.join(", ")}
       </p>
 
       <p>
-        <strong>Total Seats:</strong> {seats.length}
+        <strong>Total Seats:</strong>{" "}
+        {seats.length}
       </p>
 
-      <h2>Total Amount: ₹{total}</h2>
+      <h2>
+        Total Amount : ₹{total}
+      </h2>
 
       <button
         onClick={handlePayment}
