@@ -70,14 +70,14 @@ const createBooking = async (req, res) => {
     // Create booking
     // =========================
     const booking = await Booking.create({
-      user: req.user.id,
-      show,
-      seats,
-      totalSeats,
-      totalAmount,
-      paymentStatus: "Paid",
-      bookingStatus: "Booked",
-    });
+  user: req.user.id,
+  show: req.body.show,
+  seats: req.body.seats,
+  totalSeats: req.body.totalSeats,
+  totalAmount: req.body.totalAmount,
+  paymentStatus: "Paid",
+  bookingStatus: "Booked",
+});
 
     console.log("Created Booking:", booking);
 
