@@ -27,18 +27,20 @@ const showSchema = new mongoose.Schema(
     ticketPrice: {
       type: Number,
       required: true,
+      min: 0,
     },
 
     availableSeats: {
       type: Number,
       required: true,
+      min: 0,
     },
 
-    status: {
-      type: String,
-      enum: ["Available", "Cancelled"],
-      default: "Available",
-    },
+   status: {
+  type: String,
+  enum: ["Active", "Available", "Cancelled"],
+  default: "Active",
+},
   },
   {
     timestamps: true,
