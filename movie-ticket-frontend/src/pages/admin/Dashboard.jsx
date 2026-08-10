@@ -1,98 +1,24 @@
-import { useEffect, useState } from "react";
-import API from "../../api/axios";
+import { Link } from "react-router-dom";
 
 function Dashboard() {
-  const [stats, setStats] = useState({
-    movies: 0,
-    theatres: 0,
-    bookings: 0,
-    revenue: 0,
-  });
-
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let ignore = false;
-
-    const loadDashboard = async () => {
-      try {
-        const [moviesRes, theatresRes, bookingsRes] =
-          await Promise.all([
-            API.get("/movies"),
-            API.get("/theatres"),
-            API.get("/bookings"),
-          ]);
-
-        if (ignore) return;
-
-        const movies =
-          moviesRes.data.data || [];
-
-        const theatres =
-          theatresRes.data.data || [];
-
-        const bookings =
-          bookingsRes.data.data || [];
-
-        const activeBookings = bookings.filter(
-          (booking) =>
-            booking.bookingStatus !== "Cancelled"
-        );
-
-        const revenue = activeBookings.reduce(
-          (total, booking) =>
-            total +
-            Number(booking.totalAmount || 0),
-          0
-        );
-
-        setStats({
-          movies: movies.length,
-          theatres: theatres.length,
-          bookings: bookings.length,
-          revenue,
-        });
-      } catch (error) {
-        console.error(
-          "Dashboard Error:",
-          error
-        );
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadDashboard();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  if (loading) {
-    return (
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: "50px",
-        }}
-      >
-        <h2>Loading Dashboard...</h2>
-      </div>
-    );
-  }
-
   return (
     <div
       style={{
-        maxWidth: "1200px",
-        margin: "40px auto",
-        padding: "20px",
+        padding: "30px",
+        maxWidth: "1100px",
+        margin: "0 auto",
       }}
     >
-      <h1>📊 Admin Dashboard</h1>
+      <h1>🛠️ Admin Dashboard</h1>
+
+      <p
+        style={{
+          color: "#666",
+          marginBottom: "30px",
+        }}
+      >
+        Manage movies, theatres, shows and bookings.
+      </p>
 
       <div
         style={{
@@ -100,92 +26,87 @@ function Dashboard() {
           gridTemplateColumns:
             "repeat(auto-fit, minmax(220px, 1fr))",
           gap: "20px",
-          marginTop: "30px",
         }}
       >
-        {/* Movies */}
-        <div
+        <Link
+          to="/admin/add-movie"
           style={{
-            padding: "25px",
-            borderRadius: "10px",
-            background: "#2563eb",
-            color: "white",
+            textDecoration: "none",
+            color: "inherit",
           }}
         >
-          <h2>🎬 Movies</h2>
-          <p
+          <div
             style={{
-              fontSize: "35px",
-              fontWeight: "bold",
-              margin: 0,
+              padding: "25px",
+              border: "1px solid #ddd",
+              borderRadius: "12px",
+              cursor: "pointer",
             }}
           >
-            {stats.movies}
-          </p>
-        </div>
+            <h2>🎬 Add Movie</h2>
+            <p>Add a new movie to the system.</p>
+          </div>
+        </Link>
 
-        {/* Theatres */}
-        <div
+        <Link
+          to="/admin/add-theatre"
           style={{
-            padding: "25px",
-            borderRadius: "10px",
-            background: "#7c3aed",
-            color: "white",
+            textDecoration: "none",
+            color: "inherit",
           }}
         >
-          <h2>🏢 Theatres</h2>
-          <p
+          <div
             style={{
-              fontSize: "35px",
-              fontWeight: "bold",
-              margin: 0,
+              padding: "25px",
+              border: "1px solid #ddd",
+              borderRadius: "12px",
+              cursor: "pointer",
             }}
           >
-            {stats.theatres}
-          </p>
-        </div>
+            <h2>🏢 Add Theatre</h2>
+            <p>Add a new theatre.</p>
+          </div>
+        </Link>
 
-        {/* Bookings */}
-        <div
+        <Link
+          to="/admin/add-show"
           style={{
-            padding: "25px",
-            borderRadius: "10px",
-            background: "#16a34a",
-            color: "white",
+            textDecoration: "none",
+            color: "inherit",
           }}
         >
-          <h2>🎟️ Bookings</h2>
-          <p
+          <div
             style={{
-              fontSize: "35px",
-              fontWeight: "bold",
-              margin: 0,
+              padding: "25px",
+              border: "1px solid #ddd",
+              borderRadius: "12px",
+              cursor: "pointer",
             }}
           >
-            {stats.bookings}
-          </p>
-        </div>
+            <h2>🎟️ Add Show</h2>
+            <p>Create a movie show with seats and pricing.</p>
+          </div>
+        </Link>
 
-        {/* Revenue */}
-        <div
+        <Link
+          to="/admin/bookings"
           style={{
-            padding: "25px",
-            borderRadius: "10px",
-            background: "#ea580c",
-            color: "white",
+            textDecoration: "none",
+            color: "inherit",
           }}
         >
-          <h2>💰 Revenue</h2>
-          <p
+          <div
             style={{
-              fontSize: "35px",
-              fontWeight: "bold",
-              margin: 0,
+              padding: "25px",
+              border: "1px solid #ddd",
+              borderRadius: "12px",
+              cursor: "pointer",
             }}
           >
-            ₹{stats.revenue}
-          </p>
-        </div>
+            <h2>📋 Bookings</h2>
+            <p>View and manage customer bookings.</p>
+          </div>
+        </Link>
       </div>
     </div>
   );
