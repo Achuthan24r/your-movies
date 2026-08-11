@@ -1,16 +1,32 @@
 const Show = require("../models/Show");
 
-// Create Show
-const createShow = async (req, res) => {
+// =========================
+// Add Show
+// =========================
+
+const addShow = async (req, res) => {
   try {
-    const show = await Show.create(req.body);
+    const show = await Show.create({
+      movie: req.body.movie,
+      screen: req.body.screen,
+      showDate: req.body.showDate,
+      showTime: req.body.showTime,
+      ticketPrice: req.body.ticketPrice,
+      availableSeats: req.body.availableSeats,
+      status: req.body.status || "Active",
+    });
 
     res.status(201).json({
       success: true,
-      message: "Show Created Successfully",
+      message: "Show added successfully",
       data: show,
     });
   } catch (error) {
+    console.error(
+      "Add Show Error:",
+      error
+    );
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -18,36 +34,13 @@ const createShow = async (req, res) => {
   }
 };
 
+// =========================
 // Get All Shows
-const getAllShows = async (req, res) => {
+// =========================
+
+const getShows = async (req, res) => {
   try {
     const shows = await Show.find()
-      .populate("movie", "title language")
-      .populate({
-        path: "screen",
-        populate: {
-          path: "theatre",
-          select: "name city",
-        },
-      });
-
-    res.status(200).json({
-      success: true,
-      count: shows.length,
-      data: shows,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// Get Show By ID
-const getShowById = async (req, res) => {
-  try {
-    const show = await Show.findById(req.params.id)
       .populate("movie")
       .populate({
         path: "screen",
@@ -56,18 +49,16 @@ const getShowById = async (req, res) => {
         },
       });
 
-    if (!show) {
-      return res.status(404).json({
-        success: false,
-        message: "Show Not Found",
-      });
-    }
-
     res.status(200).json({
       success: true,
-      data: show,
+      data: shows,
     });
   } catch (error) {
+    console.error(
+      "Get Shows Error:",
+      error
+    );
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -75,62 +66,79 @@ const getShowById = async (req, res) => {
   }
 };
 
-// Update Show
-const updateShow = async (req, res) => {
-  try {
-    const show = await Show.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+// =========================
+// Get Shows By Movie + Theatre
+// =========================
 
-    if (!show) {
-      return res.status(404).json({
+const getShowsByMovieAndTheatre =
+  async (req, res) => {
+    try {
+      const {
+        movieId,
+        theatreId,
+      } = req.params;
+
+      console.log(
+        "Movie ID:",
+        movieId
+      );
+
+      console.log(
+        "Theatre ID:",
+        theatreId
+      );
+
+      const shows = await Show.find({
+        movie: movieId,
+        status: {
+          $in: [
+            "Active",
+            "Available",
+          ],
+        },
+      })
+        .populate("movie")
+        .populate({
+          path: "screen",
+          populate: {
+            path: "theatre",
+          },
+        });
+
+      const filteredShows =
+        shows.filter((show) => {
+          return (
+            show.screen &&
+            show.screen.theatre &&
+            show.screen.theatre._id.toString() ===
+              theatreId
+          );
+        });
+
+      console.log(
+        "Shows found:",
+        filteredShows.length
+      );
+
+      res.status(200).json({
+        success: true,
+        data: filteredShows,
+      });
+    } catch (error) {
+      console.error(
+        "Get Shows By Movie/Theatre Error:",
+        error
+      );
+
+      res.status(500).json({
         success: false,
-        message: "Show Not Found",
+        message: error.message,
       });
     }
-
-    res.status(200).json({
-      success: true,
-      message: "Show Updated Successfully",
-      data: show,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// Delete Show
-const deleteShow = async (req, res) => {
-  try {
-    const show = await Show.findByIdAndDelete(req.params.id);
-
-    if (!show) {
-      return res.status(404).json({
-        success: false,
-        message: "Show Not Found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Show Deleted Successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+  };
 
 module.exports = {
-  createShow,
-  getAllShows,
-  getShowById,
-  updateShow,
-  deleteShow,
+  addShow,
+  getShows,
+  getShowsByMovieAndTheatre,
 };

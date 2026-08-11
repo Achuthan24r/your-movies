@@ -1,24 +1,43 @@
 const express = require("express");
+
 const router = express.Router();
 
 const {
-  createShow,
-  getAllShows,
-  getShowById,
-  updateShow,
-  deleteShow,
+  addShow,
+  getShows,
+  getShowsByMovieAndTheatre,
 } = require("../controllers/showController");
 
 const protect = require("../middleware/authMiddleware");
 const admin = require("../middleware/adminMiddleware");
 
+// =========================
 // Admin
-router.post("/", protect, admin, createShow);
-router.put("/:id", protect, admin, updateShow);
-router.delete("/:id", protect, admin, deleteShow);
+// =========================
 
+router.post(
+  "/",
+  protect,
+  admin,
+  addShow
+);
+
+// =========================
 // Public
-router.get("/", getAllShows);
-router.get("/:id", getShowById);
+// =========================
+
+router.get(
+  "/",
+  getShows
+);
+
+// =========================
+// Get Shows By Movie + Theatre
+// =========================
+
+router.get(
+  "/movie/:movieId/theatre/:theatreId",
+  getShowsByMovieAndTheatre
+);
 
 module.exports = router;

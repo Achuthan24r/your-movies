@@ -1,89 +1,77 @@
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Navbar from "./components/Navbar";
-import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
-
-// User pages
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
 import Movies from "./pages/Movies";
 import MovieDetails from "./pages/MovieDetails";
+
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Profile from "./pages/Profile";
+import MyBookings from "./pages/MyBookings";
+
 import TheatreSelection from "./pages/TheatreSelection";
 import ShowSelection from "./pages/ShowSelection";
 import SeatSelection from "./pages/SeatSelection";
 import Payment from "./pages/Payment";
 import Ticket from "./pages/Ticket";
-import MyBookings from "./pages/MyBookings";
-import Profile from "./pages/Profile";
+
+import Navbar from "./components/Navbar";
 
 // Admin pages
-import Dashboard from "./pages/admin/Dashboard";
-import AdminBookings from "./pages/admin/Bookings";
 import AddMovie from "./pages/admin/AddMovie";
 import AddTheatre from "./pages/admin/AddTheatre";
 import AddShow from "./pages/admin/AddShow";
+import Dashboard from "./pages/admin/Dashboard";
+import Bookings from "./pages/admin/Bookings";
 
 function App() {
   return (
-    <>
+    <BrowserRouter>
       <Navbar />
 
       <Routes>
-        {/* =========================
-            USER ROUTES
-        ========================= */}
+        {/* Home */}
+        <Route path="/" element={<Home />} />
 
-        <Route
-          path="/"
-          element={<Home />}
-        />
-
-        <Route
-          path="/movies"
-          element={<Movies />}
-        />
+        {/* Movies */}
+        <Route path="/movies" element={<Movies />} />
 
         <Route
           path="/movie/:id"
           element={<MovieDetails />}
         />
 
+        {/* Theatre Selection */}
         <Route
           path="/movie/:id/theatres"
           element={<TheatreSelection />}
         />
 
+        {/* Show Selection */}
         <Route
-          path="/shows/:theatreId"
+          path="/movie/:id/theatres/:theatreId/shows"
           element={<ShowSelection />}
         />
 
+        {/* Seat Selection */}
         <Route
-          path="/seat/:showId"
+          path="/show/:showId/seats"
           element={<SeatSelection />}
         />
 
+        {/* Payment */}
         <Route
           path="/payment"
           element={<Payment />}
         />
 
+        {/* Ticket */}
         <Route
-          path="/ticket"
+          path="/ticket/:id"
           element={<Ticket />}
         />
 
-        <Route
-          path="/my-bookings"
-          element={<MyBookings />}
-        />
-
-        <Route
-          path="/profile"
-          element={<Profile />}
-        />
-
+        {/* Authentication */}
         <Route
           path="/login"
           element={<Login />}
@@ -94,56 +82,44 @@ function App() {
           element={<Register />}
         />
 
-        {/* =========================
-            ADMIN ROUTES
-        ========================= */}
+        {/* User */}
+        <Route
+          path="/profile"
+          element={<Profile />}
+        />
 
         <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedAdminRoute>
-              <Dashboard />
-            </ProtectedAdminRoute>
-          }
+          path="/my-bookings"
+          element={<MyBookings />}
+        />
+
+        {/* Admin */}
+        <Route
+          path="/admin"
+          element={<Dashboard />}
+        />
+
+        <Route
+          path="/admin/movies/add"
+          element={<AddMovie />}
+        />
+
+        <Route
+          path="/admin/theatres/add"
+          element={<AddTheatre />}
+        />
+
+        <Route
+          path="/admin/shows/add"
+          element={<AddShow />}
         />
 
         <Route
           path="/admin/bookings"
-          element={
-            <ProtectedAdminRoute>
-              <AdminBookings />
-            </ProtectedAdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/add-movie"
-          element={
-            <ProtectedAdminRoute>
-              <AddMovie />
-            </ProtectedAdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/add-theatre"
-          element={
-            <ProtectedAdminRoute>
-              <AddTheatre />
-            </ProtectedAdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/add-show"
-          element={
-            <ProtectedAdminRoute>
-              <AddShow />
-            </ProtectedAdminRoute>
-          }
+          element={<Bookings />}
         />
       </Routes>
-    </>
+    </BrowserRouter>
   );
 }
 

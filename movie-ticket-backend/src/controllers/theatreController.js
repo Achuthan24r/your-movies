@@ -45,15 +45,17 @@ const getTheatres = async (req, res) => {
 };
 
 // =========================
-// Get Theatres For Movie
+// Get Theatres By Movie
 // =========================
 const getTheatresByMovie = async (req, res) => {
   try {
     const { movieId } = req.params;
 
+    console.log("Movie ID:", movieId);
+
     const shows = await Show.find({
       movie: movieId,
-      status: "Available",
+      status: { $in: ["Active", "Available"] },
     }).populate({
       path: "screen",
       populate: {
@@ -61,24 +63,36 @@ const getTheatresByMovie = async (req, res) => {
       },
     });
 
+    console.log("Shows found:", shows.length);
+
     const theatreMap = new Map();
 
     shows.forEach((show) => {
-      const theatre = show.screen?.theatre;
+      if (show.screen && show.screen.theatre) {
+        const theatre = show.screen.theatre;
 
-      if (theatre) {
-        theatreMap.set(theatre._id.toString(), theatre);
+        theatreMap.set(
+          theatre._id.toString(),
+          theatre
+        );
       }
     });
 
-    const theatres = Array.from(theatreMap.values());
+    const theatres = Array.from(
+      theatreMap.values()
+    );
+
+    console.log("Theatres found:", theatres.length);
 
     res.status(200).json({
       success: true,
       data: theatres,
     });
   } catch (error) {
-    console.error("Get Theatres By Movie Error:", error);
+    console.error(
+      "Get Theatres By Movie Error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
