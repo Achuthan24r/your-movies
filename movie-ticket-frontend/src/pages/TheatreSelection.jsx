@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import API from "../api/axios";
 
 function TheatreSelection() {
-  const { id } = useParams(); // Movie ID
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [theatres, setTheatres] = useState([]);
@@ -12,63 +12,99 @@ function TheatreSelection() {
   useEffect(() => {
     const fetchTheatres = async () => {
       try {
-        const res = await API.get("/theatres");
-        setTheatres(res.data.theatres);
+        // Change this endpoint if your backend uses a different route
+        const res = await API.get(`/theatres/movie/${id}`);
+
+        console.log("Theatres:", res.data);
+
+        setTheatres(res.data.data || []);
       } catch (error) {
-        console.error(error);
-        alert("Failed to load theatres");
+        console.error("Theatre Error:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTheatres();
-  }, []);
+  }, [id]);
 
   if (loading) {
-    return <h2>Loading...</h2>;
+    return (
+      <div style={{ textAlign: "center", padding: "50px" }}>
+        <h2>Loading theatres...</h2>
+      </div>
+    );
   }
 
   return (
-    <div style={{ padding: "30px" }}>
+    <div
+      style={{
+        padding: "40px",
+        maxWidth: "1000px",
+        margin: "0 auto",
+      }}
+    >
       <h1>Select Theatre</h1>
 
       {theatres.length === 0 ? (
-        <p>No theatres available.</p>
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <h2>No theatres available</h2>
+          <button onClick={() => navigate("/movies")}>
+            Back to Movies
+          </button>
+        </div>
       ) : (
-        theatres.map((theatre) => (
-          <div
-            key={theatre._id}
-            style={{
-              border: "1px solid #ddd",
-              padding: "20px",
-              marginBottom: "15px",
-              borderRadius: "10px",
-            }}
-          >
-            <h2>{theatre.name}</h2>
-
-            <p>{theatre.location || theatre.address}</p>
-
-            <p>{theatre.city}</p>
-
-            <button
-              onClick={() =>
-                navigate(`/shows/${theatre._id}?movie=${id}`)
-              }
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "20px",
+            marginTop: "30px",
+          }}
+        >
+          {theatres.map((theatre) => (
+            <div
+              key={theatre._id}
               style={{
-                padding: "10px 20px",
-                background: "#2563eb",
-                color: "#fff",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
+                border: "1px solid #ddd",
+                borderRadius: "10px",
+                padding: "20px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               }}
             >
-              View Shows
-            </button>
-          </div>
-        ))
+              <h2>{theatre.name}</h2>
+
+              <p>
+                <strong>City:</strong> {theatre.city}
+              </p>
+
+              <p>
+                <strong>Address:</strong> {theatre.address}
+              </p>
+
+              <button
+                onClick={() =>
+                  navigate(
+                    `/movie/${id}/theatres/${theatre._id}/shows`
+                  )
+                }
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  background: "#2563eb",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  marginTop: "10px",
+                }}
+              >
+                Select Theatre
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
