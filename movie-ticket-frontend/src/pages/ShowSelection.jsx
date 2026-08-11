@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import API from "../api/axios";
 
 function ShowSelection() {
-  const { theatreId } = useParams();
-  const [searchParams] = useSearchParams();
-  const movieId = searchParams.get("movie");
-
+  const { id, theatreId } = useParams();
   const navigate = useNavigate();
 
   const [shows, setShows] = useState([]);
@@ -15,82 +12,139 @@ function ShowSelection() {
   useEffect(() => {
     const fetchShows = async () => {
       try {
-        const res = await API.get("/shows");
-
-        const filteredShows = res.data.data.filter(
-          (show) =>
-            show.movie?._id === movieId &&
-            show.theatre === theatreId
+        const res = await API.get(
+          `/shows/movie/${id}/theatre/${theatreId}`
         );
 
-        setShows(filteredShows);
+        console.log("Shows:", res.data);
+
+        setShows(res.data.data || []);
       } catch (error) {
-        console.error(error);
-        alert("Failed to load shows");
+        console.error("Show Error:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchShows();
-  }, [movieId, theatreId]);
+  }, [id, theatreId]);
 
   if (loading) {
-    return <h2 style={{ textAlign: "center" }}>Loading Shows...</h2>;
+    return (
+      <div style={{ textAlign: "center", padding: "50px" }}>
+        <h2>Loading shows...</h2>
+      </div>
+    );
   }
 
   return (
-    <div style={{ padding: "30px" }}>
+    <div
+      style={{
+        padding: "40px",
+        maxWidth: "1000px",
+        margin: "0 auto",
+      }}
+    >
       <h1>Select Show</h1>
 
       {shows.length === 0 ? (
-        <h2>No Shows Available</h2>
-      ) : (
-        shows.map((show) => (
-          <div
-            key={show._id}
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px",
+          }}
+        >
+          <h2>No shows available</h2>
+
+          <button
+            onClick={() => navigate(`/movie/${id}/theatres`)}
             style={{
-              border: "1px solid #ddd",
-              padding: "20px",
-              marginBottom: "20px",
-              borderRadius: "10px",
+              padding: "12px 20px",
+              background: "#6b7280",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
             }}
           >
-            <h2>{show.movie?.title}</h2>
-
-            <p>
-              <strong>Date:</strong>{" "}
-              {new Date(show.showDate).toLocaleDateString()}
-            </p>
-
-            <p>
-              <strong>Time:</strong> {show.showTime}
-            </p>
-
-            <p>
-              <strong>Price:</strong> ₹{show.ticketPrice}
-            </p>
-
-            <p>
-              <strong>Available Seats:</strong>{" "}
-              {show.availableSeats}
-            </p>
-
-            <button
-              onClick={() => navigate(`/seat/${show._id}`)}
+            Back to Theatres
+          </button>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: "20px",
+            marginTop: "30px",
+          }}
+        >
+          {shows.map((show) => (
+            <div
+              key={show._id}
               style={{
-                padding: "10px 20px",
-                background: "#2563eb",
-                color: "#fff",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
+                border: "1px solid #ddd",
+                borderRadius: "10px",
+                padding: "20px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               }}
             >
-              Select Seats
-            </button>
-          </div>
-        ))
+              <h2>{show.showTime}</h2>
+
+              <p>
+                <strong>Date:</strong>{" "}
+                {new Date(show.showDate).toLocaleDateString()}
+              </p>
+
+              <p>
+                <strong>Ticket Price:</strong> ₹
+                {show.ticketPrice}
+              </p>
+
+              <p>
+                <strong>Available Seats:</strong>{" "}
+                {show.availableSeats}
+              </p>
+
+              <p>
+                <strong>Status:</strong> {show.status}
+              </p>
+
+              <button
+                disabled={
+                  show.status !== "Available" ||
+                  show.availableSeats <= 0
+                }
+                onClick={() =>
+                  navigate(
+                    `/show/${show._id}/seats`
+                  )
+                }
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "10px",
+                  background:
+                    show.status === "Available" &&
+                    show.availableSeats > 0
+                      ? "#2563eb"
+                      : "#9ca3af",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor:
+                    show.status === "Available" &&
+                    show.availableSeats > 0
+                      ? "pointer"
+                      : "not-allowed",
+                }}
+              >
+                Select Seats
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
