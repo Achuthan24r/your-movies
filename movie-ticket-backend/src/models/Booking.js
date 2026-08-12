@@ -14,35 +14,15 @@ const bookingSchema = new mongoose.Schema(
       required: true,
     },
 
-    movie: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Movie",
+    seats: {
+      type: [String],
       required: true,
     },
-
-    theatre: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Theatre",
-      required: true,
-    },
-
-    screen: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Screen",
-      required: true,
-    },
-
-    seats: [
-      {
-        type: String,
-        required: true,
-      },
-    ],
 
     totalAmount: {
       type: Number,
       required: true,
-      min: 0,
+      default: 0,
     },
 
     status: {

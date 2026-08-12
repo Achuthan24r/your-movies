@@ -9,6 +9,9 @@ function Payment() {
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
         <h2>No Booking Details Found</h2>
+        <button onClick={() => navigate("/")}>
+          Go Home
+        </button>
       </div>
     );
   }
@@ -17,12 +20,22 @@ function Payment() {
 
   const handlePayment = async () => {
     try {
-      // Check login
       const token = localStorage.getItem("token");
 
       if (!token) {
         alert("Please login before booking.");
         navigate("/login");
+        return;
+      }
+
+      if (!show?._id) {
+        alert("Show information is missing.");
+        return;
+      }
+
+      if (!seats || seats.length === 0) {
+        alert("Please select at least one seat.");
+        navigate(-1);
         return;
       }
 
@@ -35,10 +48,14 @@ function Payment() {
 
       console.log("Sending Booking:", bookingData);
 
-      const res = await API.post(
-        "/bookings",
-        bookingData
-      );
+      const res = await API.post("/bookings", bookingData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("Booking response:", res.data);
 
       if (res.data.success) {
         alert("Booking Successful!");
@@ -55,6 +72,11 @@ function Payment() {
     } catch (err) {
       console.error("Booking Error:", err);
 
+      if (err.response) {
+        console.error("Status:", err.response.status);
+        console.error("Response:", err.response.data);
+      }
+
       alert(
         err.response?.data?.message ||
           "Booking Failed"
@@ -70,8 +92,7 @@ function Payment() {
         padding: "30px",
         border: "1px solid #ddd",
         borderRadius: "10px",
-        boxShadow:
-          "0 0 10px rgba(0,0,0,0.1)",
+        boxShadow: "0 0 10px rgba(0,0,0,0.1)",
       }}
     >
       <h1 style={{ textAlign: "center" }}>
@@ -80,20 +101,18 @@ function Payment() {
 
       <hr />
 
-      <h2>
-        {show.movie?.title}
-      </h2>
+      <h2>{show?.movie?.title || "Movie"}</h2>
 
       <p>
         <strong>Show Date:</strong>{" "}
-        {new Date(
-          show.showDate
-        ).toLocaleDateString()}
+        {show?.showDate
+          ? new Date(show.showDate).toLocaleDateString()
+          : "N/A"}
       </p>
 
       <p>
         <strong>Show Time:</strong>{" "}
-        {show.showTime}
+        {show?.showTime || "N/A"}
       </p>
 
       <p>
@@ -106,9 +125,7 @@ function Payment() {
         {seats.length}
       </p>
 
-      <h2>
-        Total Amount : ₹{total}
-      </h2>
+      <h2>Total Amount: ₹{total}</h2>
 
       <button
         onClick={handlePayment}
