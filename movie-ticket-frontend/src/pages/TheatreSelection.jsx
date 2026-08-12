@@ -3,51 +3,130 @@ import { useNavigate, useParams } from "react-router-dom";
 import API from "../api/axios";
 
 function TheatreSelection() {
-  const { id } = useParams();
+  const { movieId } = useParams();
   const navigate = useNavigate();
 
   const [theatres, setTheatres] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!movieId) {
+      return;
+    }
+
+    let cancelled = false;
+
     const fetchTheatres = async () => {
       try {
-        console.log("Movie ID:", id);
+        setLoading(true);
+        setError("");
 
         const res = await API.get(
-          `/theatres/movie/${id}`
+          `/theatres/movie/${movieId}`
         );
 
-        console.log(
-          "Theatre Response:",
-          res.data
-        );
+        if (cancelled) return;
 
-        setTheatres(res.data.data || []);
-      } catch (error) {
-        console.error(
-          "Theatre Error:",
-          error
-        );
+        console.log("Theatre Response:", res.data);
 
-        setTheatres([]);
+        const data =
+          res.data?.data ||
+          res.data?.theatres ||
+          [];
+
+        setTheatres(
+          Array.isArray(data) ? data : []
+        );
+      } catch (err) {
+        if (cancelled) return;
+
+        console.error("Theatre Error:", err);
+
+        setError(
+          err.response?.data?.message ||
+            "Failed to load theatres"
+        );
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchTheatres();
-  }, [id]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [movieId]);
+
+  // Handle missing movieId outside useEffect
+  if (!movieId) {
+    return (
+      <div
+        style={{
+          padding: "40px",
+          textAlign: "center",
+        }}
+      >
+        <h2>Movie ID is missing</h2>
+
+        <button
+          onClick={() => navigate("/movies")}
+          style={{
+            padding: "12px 20px",
+            background: "#2563eb",
+            color: "#fff",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Back to Movies
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
       <div
         style={{
+          padding: "40px",
           textAlign: "center",
-          padding: "50px",
         }}
       >
-        <h2>Loading theatres...</h2>
+        <h2>Loading Theatres...</h2>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          padding: "40px",
+          textAlign: "center",
+        }}
+      >
+        <h2>Unable to Load Theatres</h2>
+
+        <p>{error}</p>
+
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            padding: "12px 20px",
+            background: "#2563eb",
+            color: "#fff",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Go Back
+        </button>
       </div>
     );
   }
@@ -55,7 +134,7 @@ function TheatreSelection() {
   return (
     <div
       style={{
-        padding: "40px",
+        padding: "30px",
         maxWidth: "1000px",
         margin: "0 auto",
       }}
@@ -65,18 +144,20 @@ function TheatreSelection() {
       {theatres.length === 0 ? (
         <div
           style={{
+            padding: "30px",
             textAlign: "center",
-            padding: "50px",
+            background: "#f5f5f5",
+            borderRadius: "10px",
           }}
         >
           <h2>No theatres available</h2>
 
           <button
-            onClick={() => navigate("/movies")}
+            onClick={() => navigate(-1)}
             style={{
-              padding: "12px 25px",
+              padding: "12px 20px",
               background: "#2563eb",
-              color: "white",
+              color: "#fff",
               border: "none",
               borderRadius: "6px",
               cursor: "pointer",
@@ -92,7 +173,7 @@ function TheatreSelection() {
             gridTemplateColumns:
               "repeat(auto-fit, minmax(280px, 1fr))",
             gap: "20px",
-            marginTop: "30px",
+            marginTop: "25px",
           }}
         >
           {theatres.map((theatre) => (
@@ -102,6 +183,7 @@ function TheatreSelection() {
                 border: "1px solid #ddd",
                 borderRadius: "10px",
                 padding: "20px",
+                background: "#fff",
                 boxShadow:
                   "0 2px 8px rgba(0,0,0,0.1)",
               }}
@@ -126,13 +208,12 @@ function TheatreSelection() {
               <button
                 onClick={() =>
                   navigate(
-                    `/movie/${id}/theatres/${theatre._id}/shows`
+                    `/movie/${movieId}/theatres/${theatre._id}/shows`
                   )
                 }
                 style={{
                   width: "100%",
                   padding: "12px",
-                  marginTop: "10px",
                   background: "#2563eb",
                   color: "#fff",
                   border: "none",
@@ -140,7 +221,7 @@ function TheatreSelection() {
                   cursor: "pointer",
                 }}
               >
-                Select Theatre
+                View Shows
               </button>
             </div>
           ))}

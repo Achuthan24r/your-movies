@@ -5,89 +5,125 @@ function Navbar() {
 
   const token = localStorage.getItem("token");
 
-  const logout = () => {
+  const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
-    alert("Logged Out Successfully");
-
     navigate("/login");
-
-    // Refresh Navbar
-    window.location.reload();
   };
 
   return (
     <nav
       style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "15px 30px",
+        width: "100%",
+        height: "70px",
         background: "#111827",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 30px",
+        boxSizing: "border-box",
       }}
     >
-      <h2 style={{ color: "#fff" }}>🎬 Movie Ticket Booking</h2>
+      {/* Logo */}
+      <Link
+        to="/"
+        style={{
+          color: "#fff",
+          textDecoration: "none",
+          fontSize: "24px",
+          fontWeight: "bold",
+        }}
+      >
+        🎬 Movie Ticket Booking
+      </Link>
 
+      {/* Navigation */}
       <div
         style={{
           display: "flex",
-          gap: "20px",
           alignItems: "center",
+          gap: "25px",
         }}
       >
         <Link
           to="/"
-          style={{ color: "#fff", textDecoration: "none" }}
+          style={{
+            color: "#fff",
+            textDecoration: "none",
+          }}
         >
           Home
         </Link>
 
         <Link
           to="/movies"
-          style={{ color: "#fff", textDecoration: "none" }}
+          style={{
+            color: "#fff",
+            textDecoration: "none",
+          }}
         >
           Movies
         </Link>
 
-        {!token ? (
+        {token ? (
+          <>
+            <Link
+              to="/my-bookings"
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+              }}
+            >
+              My Bookings
+            </Link>
+
+            <Link
+              to="/profile"
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+              }}
+            >
+              Profile
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: "9px 16px",
+                background: "#dc2626",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "15px",
+              }}
+            >
+              Logout
+            </button>
+          </>
+        ) : (
           <>
             <Link
               to="/login"
-              style={{ color: "#fff", textDecoration: "none" }}
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+              }}
             >
               Login
             </Link>
 
             <Link
               to="/register"
-              style={{ color: "#fff", textDecoration: "none" }}
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+              }}
             >
               Register
             </Link>
-          </>
-        ) : (
-          <>
-            <Link
-              to="/my-bookings"
-              style={{ color: "#fff", textDecoration: "none" }}
-            >
-              🎟 My Bookings
-            </Link>
-
-            <button
-              onClick={logout}
-              style={{
-                background: "#dc2626",
-                color: "#fff",
-                border: "none",
-                padding: "8px 15px",
-                borderRadius: "5px",
-                cursor: "pointer",
-              }}
-            >
-              Logout
-            </button>
           </>
         )}
       </div>

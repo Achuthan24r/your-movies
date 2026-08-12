@@ -1,137 +1,36 @@
+const mongoose = require("mongoose");
 const Booking = require("../models/Booking");
 const Show = require("../models/Show");
 
 // =====================================================
-// CREATE BOOKING
+// GET MY BOOKINGS
+// GET /api/bookings/my
 // =====================================================
-const createBooking = async (req, res) => {
+
+const getMyBookings = async (req, res) => {
   try {
-    console.log("Request Body:", req.body);
-    console.log("Logged-in User:", req.user);
-
-    const {
-      show,
-      seats,
-      totalSeats,
-      totalAmount,
-    } = req.body;
-
-    // =========================
-    // Basic validation
-    // =========================
-    if (!show || !seats || seats.length === 0) {
-      return res.status(400).json({
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
         success: false,
-        message: "Show and seats are required",
+        message: "User not authenticated",
       });
     }
 
-    // =========================
-    // Check total seats
-    // =========================
-    if (totalSeats !== seats.length) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid total seats",
-      });
-    }
-
-    // =========================
-    // Check if seats are already booked
-    // =========================
-    const existingBookings = await Booking.find({
-      show: show,
-      bookingStatus: "Booked",
-      seats: {
-        $in: seats,
-      },
-    });
-
-    if (existingBookings.length > 0) {
-      const bookedSeats = [];
-
-      existingBookings.forEach((booking) => {
-        booking.seats.forEach((seat) => {
-          if (seats.includes(seat)) {
-            if (!bookedSeats.includes(seat)) {
-              bookedSeats.push(seat);
-            }
-          }
-        });
-      });
-
-      return res.status(400).json({
-        success: false,
-        message: `Seat(s) already booked: ${bookedSeats.join(", ")}`,
-      });
-    }
-
-    // =========================
-    // Create booking
-    // =========================
-    const booking = await Booking.create({
-  user: req.user.id,
-  show: req.body.show,
-  seats: req.body.seats,
-  totalSeats: req.body.totalSeats,
-  totalAmount: req.body.totalAmount,
-  paymentStatus: "Paid",
-  bookingStatus: "Booked",
-});
-
-    console.log("Created Booking:", booking);
-
-    res.status(201).json({
-      success: true,
-      message: "Booking Created Successfully",
-      data: booking,
-    });
-
-  } catch (error) {
-    console.error("Booking Error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// =====================================================
-// GET ALL BOOKINGS - ADMIN
-// =====================================================
-const getAllBookings = async (req, res) => {
-  try {
-    const bookings = await Booking.find()
-      .populate("user", "name email")
-      .populate({
-        path: "show",
-        populate: [
-          {
-            path: "movie",
-            select: "title language duration poster",
-          },
-          {
-            path: "screen",
-            select: "name screenType totalSeats",
-            populate: {
-              path: "theatre",
-              select: "name city address",
-            },
-          },
-        ],
-      })
-      .sort({
-        createdAt: -1,
-      });
+    const bookings = await Booking.find({
+      user: req.user._id,
+    })
+      .populate("movie", "title poster genre language duration")
+      .populate("theatre", "name city address")
+      .populate("screen", "name screenType totalSeats")
+      .populate("show", "showDate showTime ticketPrice status")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
-      count: bookings.length,
-      data: bookings,
+      bookings,
     });
   } catch (error) {
-    console.error("GET ALL BOOKINGS ERROR:", error);
+    console.error("Get My Bookings Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -141,44 +40,121 @@ const getAllBookings = async (req, res) => {
 };
 
 // =====================================================
-// GET MY BOOKINGS
+// CREATE BOOKING
+// POST /api/bookings
 // =====================================================
-const getMyBookings = async (req, res) => {
-  try {
-    const bookings = await Booking.find({
-      user: req.user.id,
-    })
-      .populate({
-        path: "show",
-        populate: [
-          {
-            path: "movie",
-            select:
-              "title language duration poster",
-          },
-          {
-            path: "screen",
-            select:
-              "name screenType totalSeats",
-            populate: {
-              path: "theatre",
-              select:
-                "name city address",
-            },
-          },
-        ],
-      })
-      .sort({
-        createdAt: -1,
-      });
 
-    return res.status(200).json({
+const createBooking = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    const {
+      show,
+      movie,
+      theatre,
+      screen,
+      seats,
+      totalAmount,
+    } = req.body;
+
+    if (!show) {
+      return res.status(400).json({
+        success: false,
+        message: "Show ID is required",
+      });
+    }
+
+    if (!movie) {
+      return res.status(400).json({
+        success: false,
+        message: "Movie ID is required",
+      });
+    }
+
+    if (!theatre) {
+      return res.status(400).json({
+        success: false,
+        message: "Theatre ID is required",
+      });
+    }
+
+    if (!screen) {
+      return res.status(400).json({
+        success: false,
+        message: "Screen ID is required",
+      });
+    }
+
+    if (!Array.isArray(seats) || seats.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select at least one seat",
+      });
+    }
+
+    if (totalAmount === undefined || totalAmount === null) {
+      return res.status(400).json({
+        success: false,
+        message: "Total amount is required",
+      });
+    }
+
+    const showData = await Show.findById(show);
+
+    if (!showData) {
+      return res.status(404).json({
+        success: false,
+        message: "Show not found",
+      });
+    }
+
+    if (showData.status === "Cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "This show has been cancelled",
+      });
+    }
+
+    if (showData.availableSeats < seats.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Not enough seats available",
+      });
+    }
+
+    const booking = await Booking.create({
+      user: req.user._id,
+      show,
+      movie,
+      theatre,
+      screen,
+      seats,
+      totalAmount,
+      status: "Confirmed",
+    });
+
+    showData.availableSeats -= seats.length;
+
+    await showData.save();
+
+    const populatedBooking = await Booking.findById(booking._id)
+      .populate("movie", "title poster genre language duration")
+      .populate("theatre", "name city address")
+      .populate("screen", "name screenType totalSeats")
+      .populate("show", "showDate showTime ticketPrice status");
+
+    return res.status(201).json({
       success: true,
-      count: bookings.length,
-      data: bookings,
+      message: "Booking created successfully",
+      booking: populatedBooking,
     });
   } catch (error) {
-    console.error("GET MY BOOKINGS ERROR:", error);
+    console.error("Create Booking Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -189,102 +165,93 @@ const getMyBookings = async (req, res) => {
 
 // =====================================================
 // CANCEL BOOKING
+// PUT /api/bookings/cancel/:id
 // =====================================================
+
 const cancelBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
 
-    // ---------------------------------------------
-    // Find booking
-    // ---------------------------------------------
-    const booking = await Booking.findById(
-      bookingId
-    );
+    console.log("Cancel Booking ID:", bookingId);
+    console.log("Logged in User:", req.user?._id);
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID",
+      });
+    }
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    const booking = await Booking.findById(bookingId);
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: "Booking Not Found",
+        message: "Booking not found",
       });
     }
 
-    // ---------------------------------------------
-    // Make sure user owns this booking
-    // ---------------------------------------------
+    // Check ownership
     if (
-      booking.user.toString() !==
-      req.user.id.toString()
+      booking.user &&
+      booking.user.toString() !== req.user._id.toString()
     ) {
       return res.status(403).json({
         success: false,
-        message:
-          "You are not allowed to cancel this booking",
+        message: "You are not allowed to cancel this booking",
       });
     }
 
-    // ---------------------------------------------
-    // Check already cancelled
-    // ---------------------------------------------
-    if (
-      booking.bookingStatus === "Cancelled"
-    ) {
+    // Already cancelled
+    if (booking.status === "Cancelled") {
       return res.status(400).json({
         success: false,
         message: "Booking is already cancelled",
       });
     }
 
-    // ---------------------------------------------
-    // Find show
-    // ---------------------------------------------
-    const show = await Show.findById(
-      booking.show
-    );
+    // Restore seats to show
+    if (booking.show) {
+      const show = await Show.findById(booking.show);
 
-    if (!show) {
-      return res.status(404).json({
-        success: false,
-        message: "Show Not Found",
-      });
+      if (show) {
+        show.availableSeats += booking.seats.length;
+
+        await show.save();
+      }
     }
 
-    // ---------------------------------------------
-    // Restore seats
-    // ---------------------------------------------
-    show.availableSeats =
-      show.availableSeats +
-      booking.totalSeats;
-
-    await show.save();
-
-    // ---------------------------------------------
-    // Cancel booking
-    // ---------------------------------------------
-    booking.bookingStatus = "Cancelled";
+    booking.status = "Cancelled";
 
     await booking.save();
 
-    console.log(
-      "Booking Cancelled:",
-      booking._id
-    );
-
-    console.log(
-      "Available Seats Restored:",
-      show.availableSeats
-    );
+    const updatedBooking = await Booking.findById(booking._id)
+      .populate("movie", "title poster genre language duration")
+      .populate("theatre", "name city address")
+      .populate("screen", "name screenType totalSeats")
+      .populate("show", "showDate showTime ticketPrice status");
 
     return res.status(200).json({
       success: true,
-      message:
-        "Booking Cancelled Successfully",
-      data: booking,
+      message: "Booking cancelled successfully",
+      booking: updatedBooking,
     });
   } catch (error) {
-    console.error(
-      "CANCEL BOOKING ERROR:",
-      error
-    );
+    console.error("Cancel Booking Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -294,11 +261,61 @@ const cancelBooking = async (req, res) => {
 };
 
 // =====================================================
-// EXPORT
+// GET SINGLE BOOKING
+// GET /api/bookings/:id
 // =====================================================
+
+const getBookingById = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID",
+      });
+    }
+
+    const booking = await Booking.findById(bookingId)
+      .populate("movie", "title poster genre language duration")
+      .populate("theatre", "name city address")
+      .populate("screen", "name screenType totalSeats")
+      .populate("show", "showDate showTime ticketPrice status");
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    if (
+      booking.user &&
+      booking.user.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view this booking",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      booking,
+    });
+  } catch (error) {
+    console.error("Get Booking Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
-  createBooking,
-  getAllBookings,
   getMyBookings,
+  createBooking,
   cancelBooking,
+  getBookingById,
 };

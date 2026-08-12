@@ -183,21 +183,21 @@ function MovieDetails() {
       </h3>
 
       {/* Select Theatre */}
-      <button
-        onClick={() => navigate(`/movie/${movie._id}/theatres`)}
-        style={{
-          padding: "12px 24px",
-          background: "#2563eb",
-          color: "#fff",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontSize: "16px",
-          marginTop: "20px",
-        }}
-      >
-        🎟️ Select Theatre
-      </button>
+   <button
+  onClick={() =>
+    navigate(`/movie/${movie._id}/theatres`)
+  }
+  style={{
+    padding: "12px 20px",
+    background: "#2563eb",
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+  }}
+>
+  Select Theatre
+</button>
 
       {/* Back */}
       <button
