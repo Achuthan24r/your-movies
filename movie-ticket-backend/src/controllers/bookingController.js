@@ -1,17 +1,27 @@
 const mongoose = require("mongoose");
+
 const Booking = require("../models/Booking");
 const Show = require("../models/Show");
 
-// ========================================
+// ======================================================
 // CREATE BOOKING
 // POST /api/bookings
-// ========================================
+// ======================================================
 
 const createBooking = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
-    console.log("================================");
+    console.log("======================================");
     console.log("CREATE BOOKING");
-    console.log("================================");
+    console.log("======================================");
+
+    console.log("Request body:", req.body);
+    console.log("Logged user:", req.user?._id);
+
+    // --------------------------------------------------
+    // AUTH CHECK
+    // --------------------------------------------------
 
     if (!req.user || !req.user._id) {
       return res.status(401).json({
@@ -20,11 +30,15 @@ const createBooking = async (req, res) => {
       });
     }
 
+    // --------------------------------------------------
+    // GET DATA
+    // --------------------------------------------------
+
     const { show, seats, totalAmount } = req.body;
 
-    // -----------------------------
-    // Validate show
-    // -----------------------------
+    // --------------------------------------------------
+    // VALIDATE SHOW
+    // --------------------------------------------------
 
     if (!show) {
       return res.status(400).json({
@@ -40,9 +54,9 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // Validate seats
-    // -----------------------------
+    // --------------------------------------------------
+    // VALIDATE SEATS
+    // --------------------------------------------------
 
     if (!Array.isArray(seats) || seats.length === 0) {
       return res.status(400).json({
@@ -51,176 +65,236 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Remove duplicate seats from same request
-    const requestedSeats = [
-      ...new Set(
-        seats
-          .map((seat) => String(seat).trim())
-          .filter(Boolean)
-      ),
-    ];
+    // Convert everything to strings
+    const cleanSeats = seats.map((seat) => String(seat).trim());
 
-    if (requestedSeats.length === 0) {
+    // Remove duplicate seats selected by same user
+    const uniqueSeats = [...new Set(cleanSeats)];
+
+    if (uniqueSeats.length !== cleanSeats.length) {
       return res.status(400).json({
         success: false,
-        message: "Invalid seat selection",
+        message: "Duplicate seats selected",
       });
     }
 
-    // -----------------------------
-    // Find show
-    // -----------------------------
+    // --------------------------------------------------
+    // START TRANSACTION
+    // --------------------------------------------------
 
-    const showData = await Show.findById(show);
+    session.startTransaction();
+
+    // --------------------------------------------------
+    // GET SHOW
+    // --------------------------------------------------
+
+    const showData = await Show.findById(show).session(session);
 
     if (!showData) {
+      await session.abortTransaction();
+
       return res.status(404).json({
         success: false,
         message: "Show not found",
       });
     }
 
-    // -----------------------------
-    // Check show status
-    // -----------------------------
-
-    if (showData.status === "Cancelled") {
-      return res.status(400).json({
-        success: false,
-        message: "This show has been cancelled",
-      });
-    }
-
-    // -----------------------------
-    // Check available seat count
-    // -----------------------------
+    // --------------------------------------------------
+    // CHECK SHOW STATUS
+    // --------------------------------------------------
 
     if (
-      requestedSeats.length >
-      showData.availableSeats
+      showData.status !== "Active" &&
+      showData.status !== "Available"
     ) {
+      await session.abortTransaction();
+
       return res.status(400).json({
         success: false,
-        message: `Only ${showData.availableSeats} seats are available`,
+        message: "This show is not available for booking",
       });
     }
 
-    // ========================================
-    // IMPORTANT:
-    // Find seats already booked for this show
-    // ========================================
+    // --------------------------------------------------
+    // CHECK AVAILABLE SEATS COUNT
+    // --------------------------------------------------
+
+    if (showData.availableSeats < uniqueSeats.length) {
+      await session.abortTransaction();
+
+      return res.status(409).json({
+        success: false,
+        message: "Not enough seats available",
+        availableSeats: showData.availableSeats,
+      });
+    }
+
+    // --------------------------------------------------
+    // CHECK WHETHER SEATS ARE ALREADY BOOKED
+    // --------------------------------------------------
 
     const existingBookings = await Booking.find({
       show: show,
       status: "Confirmed",
-    });
+      seats: {
+        $in: uniqueSeats,
+      },
+    }).session(session);
+
+    // --------------------------------------------------
+    // FIND ALREADY BOOKED SEATS
+    // --------------------------------------------------
 
     const bookedSeats = [];
 
     existingBookings.forEach((booking) => {
       booking.seats.forEach((seat) => {
-        bookedSeats.push(String(seat));
+        if (uniqueSeats.includes(String(seat))) {
+          if (!bookedSeats.includes(String(seat))) {
+            bookedSeats.push(String(seat));
+          }
+        }
       });
     });
 
-    // -----------------------------
-    // Find duplicate seats
-    // -----------------------------
+    // --------------------------------------------------
+    // IF SOME SEATS ARE BOOKED
+    // --------------------------------------------------
 
-    const alreadyBooked = requestedSeats.filter(
-      (seat) => bookedSeats.includes(seat)
-    );
+    if (bookedSeats.length > 0) {
+      await session.abortTransaction();
 
-    if (alreadyBooked.length > 0) {
       return res.status(409).json({
         success: false,
         message: "Some seats are already booked",
-        seats: alreadyBooked,
+        seats: bookedSeats,
       });
     }
 
-    // ========================================
+    // --------------------------------------------------
     // CREATE BOOKING
-    // ========================================
+    // --------------------------------------------------
 
-    const booking = await Booking.create({
-      user: req.user._id,
-      show: show,
-      seats: requestedSeats,
-      totalAmount: Number(totalAmount) || 0,
-      status: "Confirmed",
-    });
-
-    // ========================================
-    // REDUCE AVAILABLE SEATS
-    // ========================================
-
-    showData.availableSeats -= requestedSeats.length;
-
-    await showData.save();
-
-    console.log(
-      "Seats booked:",
-      requestedSeats
+    const bookingArray = await Booking.create(
+      [
+        {
+          user: req.user._id,
+          show: show,
+          seats: uniqueSeats,
+          totalAmount: Number(totalAmount) || 0,
+          status: "Confirmed",
+        },
+      ],
+      {
+        session,
+      }
     );
 
+    const booking = bookingArray[0];
+
+    // --------------------------------------------------
+    // DECREASE AVAILABLE SEATS
+    // --------------------------------------------------
+
+    showData.availableSeats =
+      showData.availableSeats - uniqueSeats.length;
+
+    // --------------------------------------------------
+    // IF NO SEATS LEFT
+    // --------------------------------------------------
+
+    if (showData.availableSeats === 0) {
+      showData.status = "Available";
+    }
+
+    await showData.save({
+      session,
+    });
+
+    // --------------------------------------------------
+    // POPULATE BOOKING
+    // --------------------------------------------------
+
+    const populatedBooking = await Booking.findById(
+      booking._id
+    )
+      .populate({
+        path: "show",
+        populate: [
+          {
+            path: "movie",
+          },
+          {
+            path: "screen",
+          },
+        ],
+      })
+      .session(session);
+
+    // --------------------------------------------------
+    // COMMIT TRANSACTION
+    // --------------------------------------------------
+
+    await session.commitTransaction();
+
+    console.log("Booking created:", booking._id);
+    console.log("Seats:", uniqueSeats);
     console.log(
       "Remaining seats:",
       showData.availableSeats
     );
 
-    // ========================================
-    // GET POPULATED BOOKING
-    // ========================================
-
-    const populatedBooking =
-      await Booking.findById(booking._id)
-        .populate({
-          path: "show",
-          populate: [
-            {
-              path: "movie",
-              select: "title poster genre duration",
-            },
-            {
-              path: "screen",
-            },
-          ],
-        });
-
     return res.status(201).json({
       success: true,
       message: "Booking created successfully",
       data: populatedBooking,
+      availableSeats: showData.availableSeats,
     });
-
   } catch (error) {
-    console.error("================================");
-    console.error("CREATE BOOKING ERROR");
-    console.error("================================");
-    console.error(error);
+    console.error("Create Booking Error:", error);
+
+    try {
+      await session.abortTransaction();
+    } catch (abortError) {
+      console.error("Transaction abort error:", abortError);
+    }
 
     return res.status(500).json({
       success: false,
       message: error.message,
     });
+  } finally {
+    session.endSession();
   }
 };
 
-
-// ========================================
+// ======================================================
 // GET MY BOOKINGS
 // GET /api/bookings/my
-// ========================================
+// ======================================================
 
 const getMyBookings = async (req, res) => {
   try {
+    console.log("======================================");
+    console.log("GET MY BOOKINGS");
+    console.log("======================================");
+
+    console.log("User:", req.user?._id);
+
+    // --------------------------------------------------
+    // AUTH CHECK
+    // --------------------------------------------------
+
     if (!req.user || !req.user._id) {
       return res.status(401).json({
         success: false,
         message: "User not authenticated",
       });
     }
+
+    // --------------------------------------------------
+    // FIND BOOKINGS
+    // --------------------------------------------------
 
     const bookings = await Booking.find({
       user: req.user._id,
@@ -230,7 +304,6 @@ const getMyBookings = async (req, res) => {
         populate: [
           {
             path: "movie",
-            select: "title poster genre duration",
           },
           {
             path: "screen",
@@ -245,12 +318,8 @@ const getMyBookings = async (req, res) => {
       success: true,
       data: bookings,
     });
-
   } catch (error) {
-    console.error(
-      "Get My Bookings Error:",
-      error
-    );
+    console.error("Get My Bookings Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -259,20 +328,43 @@ const getMyBookings = async (req, res) => {
   }
 };
 
-
-// ========================================
+// ======================================================
 // CANCEL BOOKING
 // PUT /api/bookings/cancel/:id
-// ========================================
+// ======================================================
 
 const cancelBooking = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
+    console.log("======================================");
+    console.log("CANCEL BOOKING");
+    console.log("======================================");
+
     const bookingId = req.params.id;
+
+    console.log("Booking ID:", bookingId);
+    console.log("User:", req.user?._id);
+
+    // --------------------------------------------------
+    // AUTH CHECK
+    // --------------------------------------------------
 
     if (!req.user || !req.user._id) {
       return res.status(401).json({
         success: false,
         message: "User not authenticated",
+      });
+    }
+
+    // --------------------------------------------------
+    // VALIDATE BOOKING ID
+    // --------------------------------------------------
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
       });
     }
 
@@ -283,77 +375,109 @@ const cancelBooking = async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // Find booking
-    // -----------------------------
+    // --------------------------------------------------
+    // START TRANSACTION
+    // --------------------------------------------------
+
+    session.startTransaction();
+
+    // --------------------------------------------------
+    // FIND BOOKING
+    // --------------------------------------------------
 
     const booking = await Booking.findById(
       bookingId
-    );
+    ).session(session);
 
     if (!booking) {
+      await session.abortTransaction();
+
       return res.status(404).json({
         success: false,
         message: "Booking not found",
       });
     }
 
-    // -----------------------------
-    // Check ownership
-    // -----------------------------
+    // --------------------------------------------------
+    // CHECK OWNERSHIP
+    // --------------------------------------------------
 
     if (
       booking.user.toString() !==
       req.user._id.toString()
     ) {
+      await session.abortTransaction();
+
       return res.status(403).json({
         success: false,
-        message:
-          "You are not allowed to cancel this booking",
+        message: "You are not allowed to cancel this booking",
       });
     }
 
-    // -----------------------------
-    // Already cancelled
-    // -----------------------------
+    // --------------------------------------------------
+    // CHECK ALREADY CANCELLED
+    // --------------------------------------------------
 
     if (booking.status === "Cancelled") {
+      await session.abortTransaction();
+
       return res.status(400).json({
         success: false,
         message: "Booking is already cancelled",
       });
     }
 
-    // -----------------------------
-    // Find show
-    // -----------------------------
+    // --------------------------------------------------
+    // FIND SHOW
+    // --------------------------------------------------
 
-    const show = await Show.findById(
+    const showData = await Show.findById(
       booking.show
-    );
+    ).session(session);
 
-    if (!show) {
+    if (!showData) {
+      await session.abortTransaction();
+
       return res.status(404).json({
         success: false,
         message: "Show not found",
       });
     }
 
-    // ========================================
-    // RETURN SEATS TO AVAILABLE COUNT
-    // ========================================
-
-    show.availableSeats += booking.seats.length;
-
-    await show.save();
-
-    // ========================================
-    // MARK BOOKING CANCELLED
-    // ========================================
+    // --------------------------------------------------
+    // CANCEL BOOKING
+    // --------------------------------------------------
 
     booking.status = "Cancelled";
 
-    await booking.save();
+    await booking.save({
+      session,
+    });
+
+    // --------------------------------------------------
+    // RESTORE SEATS
+    // --------------------------------------------------
+
+    showData.availableSeats =
+      showData.availableSeats + booking.seats.length;
+
+    // --------------------------------------------------
+    // SHOW BECOMES ACTIVE AGAIN
+    // --------------------------------------------------
+
+    if (showData.availableSeats > 0) {
+      showData.status = "Active";
+    }
+
+    await showData.save({
+      session,
+    });
+
+    // --------------------------------------------------
+    // COMMIT
+    // --------------------------------------------------
+
+    await session.commitTransaction();
 
     console.log(
       "Booking cancelled:",
@@ -361,38 +485,42 @@ const cancelBooking = async (req, res) => {
     );
 
     console.log(
-      "Seats returned:",
+      "Seats restored:",
       booking.seats.length
     );
 
     console.log(
       "Available seats:",
-      show.availableSeats
+      showData.availableSeats
     );
 
     return res.status(200).json({
       success: true,
       message: "Booking cancelled successfully",
       data: booking,
+      availableSeats: showData.availableSeats,
     });
-
   } catch (error) {
-    console.error(
-      "Cancel Booking Error:",
-      error
-    );
+    console.error("Cancel Booking Error:", error);
+
+    try {
+      await session.abortTransaction();
+    } catch (abortError) {
+      console.error("Abort transaction error:", abortError);
+    }
 
     return res.status(500).json({
       success: false,
       message: error.message,
     });
+  } finally {
+    session.endSession();
   }
 };
 
-
-// ========================================
+// ======================================================
 // EXPORT
-// ========================================
+// ======================================================
 
 module.exports = {
   createBooking,
