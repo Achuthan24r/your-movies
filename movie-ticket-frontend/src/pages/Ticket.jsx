@@ -1,13 +1,17 @@
 import { useLocation, useNavigate } from "react-router-dom";
 
 function Ticket() {
-  const navigate = useNavigate();
   const { state } = useLocation();
+  const navigate = useNavigate();
 
   if (!state) {
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
-        <h2>No Ticket Found</h2>
+        <h2>No Ticket Details Found</h2>
+
+        <button onClick={() => navigate("/movies")}>
+          Browse Movies
+        </button>
       </div>
     );
   }
@@ -17,65 +21,99 @@ function Ticket() {
   return (
     <div
       style={{
-        maxWidth: "650px",
+        maxWidth: "600px",
         margin: "40px auto",
         padding: "30px",
-        border: "2px dashed #2563eb",
+        border: "1px solid #ddd",
         borderRadius: "12px",
+        boxShadow: "0 0 15px rgba(0,0,0,0.1)",
         background: "#fff",
-        boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
       }}
     >
-      <h1 style={{ textAlign: "center", color: "#2563eb" }}>
-        🎫 Movie Ticket
+      <h1 style={{ textAlign: "center", color: "#16a34a" }}>
+        🎟️ Booking Confirmed
       </h1>
 
       <hr />
 
-      <img
-        src={show.movie.poster}
-        alt={show.movie.title}
+      <h2>{show?.movie?.title}</h2>
+
+      <p>
+        <strong>Booking ID:</strong>{" "}
+        {booking?._id || "N/A"}
+      </p>
+
+      <p>
+        <strong>Show Date:</strong>{" "}
+        {show?.showDate
+          ? new Date(show.showDate).toLocaleDateString()
+          : "N/A"}
+      </p>
+
+      <p>
+        <strong>Show Time:</strong>{" "}
+        {show?.showTime || "N/A"}
+      </p>
+
+      <p>
+        <strong>Seats:</strong>{" "}
+        {seats?.join(", ") || "N/A"}
+      </p>
+
+      <p>
+        <strong>Total Seats:</strong>{" "}
+        {seats?.length || 0}
+      </p>
+
+      <h2>
+        Total Amount: ₹{total}
+      </h2>
+
+      <div
         style={{
-          width: "200px",
-          display: "block",
-          margin: "20px auto",
-          borderRadius: "10px",
+          marginTop: "25px",
+          padding: "15px",
+          background: "#f0fdf4",
+          borderRadius: "8px",
+          textAlign: "center",
         }}
-      />
+      >
+        <strong>✅ Payment Successful</strong>
+        <p>Your movie tickets have been booked successfully.</p>
+      </div>
 
-      <h2 style={{ textAlign: "center" }}>{show.movie.title}</h2>
-
-      <p><strong>Booking ID:</strong> {booking._id}</p>
-
-      <p><strong>Movie:</strong> {show.movie.title}</p>
-
-      <p><strong>Language:</strong> {show.movie.language}</p>
-
-      <p><strong>Show Date:</strong> {new Date(show.showDate).toLocaleDateString()}</p>
-
-      <p><strong>Show Time:</strong> {show.showTime}</p>
-
-      <p><strong>Seats:</strong> {seats.join(", ")}</p>
-
-      <p><strong>Total Amount:</strong> ₹{total}</p>
-
-      <p><strong>Status:</strong> ✅ Booked</p>
+      <button
+        onClick={() => navigate("/my-bookings")}
+        style={{
+          width: "100%",
+          padding: "14px",
+          marginTop: "20px",
+          background: "#2563eb",
+          color: "white",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer",
+          fontSize: "16px",
+        }}
+      >
+        View My Bookings
+      </button>
 
       <button
         onClick={() => navigate("/movies")}
         style={{
           width: "100%",
-          padding: "15px",
-          marginTop: "20px",
-          background: "#2563eb",
-          color: "#fff",
+          padding: "14px",
+          marginTop: "10px",
+          background: "#374151",
+          color: "white",
           border: "none",
-          borderRadius: "5px",
+          borderRadius: "6px",
           cursor: "pointer",
           fontSize: "16px",
         }}
       >
-        Book Another Movie
+        Browse More Movies
       </button>
     </div>
   );

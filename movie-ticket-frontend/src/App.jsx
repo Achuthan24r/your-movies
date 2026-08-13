@@ -11,6 +11,7 @@ import TheatreSelection from "./pages/TheatreSelection";
 import ShowSelection from "./pages/ShowSelection";
 import SeatSelection from "./pages/SeatSelection";
 import Payment from "./pages/Payment";
+import Ticket from "./pages/Ticket";
 import MyBookings from "./pages/MyBookings";
 import Profile from "./pages/Profile";
 
@@ -20,10 +21,25 @@ function App() {
       <Navbar />
 
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/movies" element={<Movies />} />
+        <Route
+          path="/"
+          element={<Home />}
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
+        <Route
+          path="/movies"
+          element={<Movies />}
+        />
 
         <Route
           path="/movie/:id"
@@ -48,6 +64,12 @@ function App() {
         <Route
           path="/payment"
           element={<Payment />}
+        />
+
+        {/* IMPORTANT: Ticket route */}
+        <Route
+          path="/ticket"
+          element={<Ticket />}
         />
 
         <Route
