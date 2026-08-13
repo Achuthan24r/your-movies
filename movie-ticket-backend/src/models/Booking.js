@@ -17,12 +17,19 @@ const bookingSchema = new mongoose.Schema(
     seats: {
       type: [String],
       required: true,
+      validate: {
+        validator: function (seats) {
+          return seats.length > 0;
+        },
+        message: "At least one seat is required",
+      },
     },
 
     totalAmount: {
       type: Number,
       required: true,
       default: 0,
+      min: 0,
     },
 
     status: {
