@@ -36,11 +36,11 @@ const showSchema = new mongoose.Schema(
       min: 0,
     },
 
-   status: {
-  type: String,
-  enum: ["Active", "Available", "Cancelled"],
-  default: "Active",
-},
+    status: {
+      type: String,
+      enum: ["Active", "Available", "Cancelled"],
+      default: "Active",
+    },
   },
   {
     timestamps: true,
