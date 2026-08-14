@@ -1,7 +1,9 @@
+```jsx
 import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 
+// User pages
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -15,12 +17,24 @@ import Ticket from "./pages/Ticket";
 import MyBookings from "./pages/MyBookings";
 import Profile from "./pages/Profile";
 
+// Admin pages
+import Dashboard from "./admin/Dashboard";
+import AddMovie from "./admin/AddMovie";
+import AddTheatre from "./admin/AddTheatre";
+import AddShow from "./admin/AddShow";
+import AdminBookings from "./admin/Bookings";
+
 function App() {
   return (
     <>
       <Navbar />
 
       <Routes>
+
+        {/* ========================= */}
+        {/* USER ROUTES */}
+        {/* ========================= */}
+
         <Route
           path="/"
           element={<Home />}
@@ -66,7 +80,6 @@ function App() {
           element={<Payment />}
         />
 
-        {/* IMPORTANT: Ticket route */}
         <Route
           path="/ticket"
           element={<Ticket />}
@@ -81,9 +94,41 @@ function App() {
           path="/profile"
           element={<Profile />}
         />
+
+
+        {/* ========================= */}
+        {/* ADMIN ROUTES */}
+        {/* ========================= */}
+
+        <Route
+          path="/admin/dashboard"
+          element={<Dashboard />}
+        />
+
+        <Route
+          path="/admin/add-movie"
+          element={<AddMovie />}
+        />
+
+        <Route
+          path="/admin/add-theatre"
+          element={<AddTheatre />}
+        />
+
+        <Route
+          path="/admin/add-show"
+          element={<AddShow />}
+        />
+
+        <Route
+          path="/admin/bookings"
+          element={<AdminBookings />}
+        />
+
       </Routes>
     </>
   );
 }
 
 export default App;
+```

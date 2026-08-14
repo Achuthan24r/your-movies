@@ -6,17 +6,38 @@ const {
   createBooking,
   getMyBookings,
   cancelBooking,
+  getAllBookings,
 } = require("../controllers/bookingController");
 
 const protect = require("../middleware/authMiddleware");
+const admin = require("../middleware/adminMiddleware");
 
-// Create booking
+// ======================================================
+// USER - CREATE BOOKING
+// POST /api/bookings
+// ======================================================
+
 router.post("/", protect, createBooking);
 
-// Get logged-in user's bookings
+// ======================================================
+// USER - GET MY BOOKINGS
+// GET /api/bookings/my
+// ======================================================
+
 router.get("/my", protect, getMyBookings);
 
-// Cancel booking
+// ======================================================
+// USER - CANCEL BOOKING
+// PUT /api/bookings/cancel/:id
+// ======================================================
+
 router.put("/cancel/:id", protect, cancelBooking);
+
+// ======================================================
+// ADMIN - GET ALL BOOKINGS
+// GET /api/bookings
+// ======================================================
+
+router.get("/", protect, admin, getAllBookings);
 
 module.exports = router;

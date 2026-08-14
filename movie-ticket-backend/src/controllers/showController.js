@@ -1,109 +1,151 @@
 const mongoose = require("mongoose");
 const Show = require("../models/Show");
-
-// =====================================================
-// ADD SHOW
-// =====================================================
-
-const addShow = async (req, res) => {
-  try {
-    const {
-      movie,
-      screen,
-      showDate,
-      showTime,
-      ticketPrice,
-      availableSeats,
-      status,
-    } = req.body;
-
-    if (!movie || !screen || !showDate || !showTime) {
-      return res.status(400).json({
-        success: false,
-        message: "Movie, screen, date and time are required",
-      });
-    }
-
-    const show = await Show.create({
-      movie,
-      screen,
-      showDate,
-      showTime,
-      ticketPrice,
-      availableSeats,
-      status: status || "Active",
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Show added successfully",
-      data: show,
-    });
-  } catch (error) {
-    console.error("Add Show Error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// =====================================================
+const Booking = require("../models/Booking");
+// ========================================
 // GET ALL SHOWS
-// =====================================================
+// GET /api/shows
+// ========================================
 
 const getShows = async (req, res) => {
   try {
     const shows = await Show.find()
       .populate("movie")
-      .populate({
-        path: "screen",
-        populate: {
-          path: "theatre",
-        },
-      });
+      .populate("screen")
+      .sort({ showDate: 1, showTime: 1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: shows,
     });
   } catch (error) {
     console.error("Get Shows Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// =====================================================
-// GET SINGLE SHOW BY ID
-// =====================================================
+// ========================================
+// GET SHOWS BY MOVIE
+// GET /api/shows/movie/:movieId
+// ========================================
 
-const getShowById = async (req, res) => {
+const getShowsByMovie = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { movieId } = req.params;
 
-    console.log("Get Show ID:", id);
-
-    if (!id) {
+    if (!mongoose.Types.ObjectId.isValid(movieId)) {
       return res.status(400).json({
         success: false,
-        message: "Show ID is required",
+        message: "Invalid movie ID",
       });
     }
 
-    // Check MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    const shows = await Show.find({
+      movie: movieId,
+      status: { $ne: "Cancelled" },
+    })
+      .populate("movie")
+      .populate("screen")
+      .sort({ showDate: 1, showTime: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: shows,
+    });
+  } catch (error) {
+    console.error("Get Shows By Movie Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ========================================
+// GET SHOWS BY MOVIE + THEATRE
+// GET /api/shows/movie/:movieId/theatre/:theatreId
+// ========================================
+
+const getShowsByMovieAndTheatre = async (req, res) => {
+  try {
+    const { movieId, theatreId } = req.params;
+
+    console.log("Movie ID:", movieId);
+    console.log("Theatre ID:", theatreId);
+
+    if (!mongoose.Types.ObjectId.isValid(movieId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid movie ID",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(theatreId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid theatre ID",
+      });
+    }
+
+    const shows = await Show.find({
+      movie: movieId,
+      status: { $ne: "Cancelled" },
+    })
+      .populate({
+        path: "screen",
+        populate: {
+          path: "theatre",
+        },
+      })
+      .populate("movie");
+
+    const filteredShows = shows.filter((show) => {
+      return (
+        show.screen &&
+        show.screen.theatre &&
+        show.screen.theatre._id.toString() === theatreId
+      );
+    });
+
+    console.log("Shows found:", filteredShows.length);
+
+    return res.status(200).json({
+      success: true,
+      data: filteredShows,
+    });
+  } catch (error) {
+    console.error("Get Shows By Movie + Theatre Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ========================================
+// GET ONE SHOW
+// GET /api/shows/:showId
+// ========================================
+
+const getShowById = async (req, res) => {
+  try {
+    const { showId } = req.params;
+
+    console.log("Get Show ID:", showId);
+
+    if (!mongoose.Types.ObjectId.isValid(showId)) {
       return res.status(400).json({
         success: false,
         message: "Invalid show ID",
       });
     }
 
-    const show = await Show.findById(id)
+    const show = await Show.findById(showId)
       .populate("movie")
       .populate({
         path: "screen",
@@ -119,97 +161,45 @@ const getShowById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
-      success: true,
-      data: show,
-      show: show,
+    // Find all confirmed bookings for this show
+    const bookings = await Booking.find({
+      show: showId,
+      status: "Confirmed",
     });
+
+    // Collect all booked seats
+    const bookedSeats = [];
+
+    bookings.forEach((booking) => {
+      booking.seats.forEach((seat) => {
+        bookedSeats.push(String(seat));
+      });
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...show.toObject(),
+        bookedSeats,
+      },
+    });
+
   } catch (error) {
     console.error("Get Show By ID Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-
-// =====================================================
-// GET SHOWS BY MOVIE + THEATRE
-// =====================================================
-
-const getShowsByMovieAndTheatre = async (req, res) => {
-  try {
-    const { movieId, theatreId } = req.params;
-
-    console.log("Movie ID:", movieId);
-    console.log("Theatre ID:", theatreId);
-
-    if (!movieId || !theatreId) {
-      return res.status(400).json({
-        success: false,
-        message: "Movie ID and Theatre ID are required",
-      });
-    }
-
-    if (
-      !mongoose.Types.ObjectId.isValid(movieId) ||
-      !mongoose.Types.ObjectId.isValid(theatreId)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid Movie ID or Theatre ID",
-      });
-    }
-
-    const shows = await Show.find({
-      movie: movieId,
-      status: {
-        $in: ["Active", "Available"],
-      },
-    })
-      .populate("movie")
-      .populate({
-        path: "screen",
-        populate: {
-          path: "theatre",
-        },
-      });
-
-    const filteredShows = shows.filter((show) => {
-      return (
-        show.screen &&
-        show.screen.theatre &&
-        show.screen.theatre._id.toString() === theatreId
-      );
-    });
-
-    console.log("Shows found:", filteredShows.length);
-
-    res.status(200).json({
-      success: true,
-      data: filteredShows,
-    });
-  } catch (error) {
-    console.error(
-      "Get Shows By Movie/Theatre Error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// =====================================================
-// EXPORT
-// =====================================================
+// ========================================
+// EXPORTS
+// ========================================
 
 module.exports = {
-  addShow,
   getShows,
-  getShowById,
+  getShowsByMovie,
   getShowsByMovieAndTheatre,
+  getShowById,
 };

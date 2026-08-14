@@ -10,39 +10,59 @@ function SeatSelection() {
   const [selectedSeats, setSelectedSeats] = useState([]);
 
   useEffect(() => {
-  const fetchShow = async () => {
-    try {
-      const res = await API.get(`/shows/${showId}`);
+    const fetchShow = async () => {
+      try {
+        const res = await API.get(`/shows/${showId}`);
 
-      if (res.data.success) {
-        setShow(res.data.data);
+        if (res.data.success) {
+          setShow(res.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to load show:", err);
+        alert("Failed to load show");
       }
-    } catch (err) {
-      console.error(err);
-      alert("Failed to load show");
-    }
-  };
+    };
 
-  fetchShow();
-}, [showId]);
+    fetchShow();
+  }, [showId]);
 
   const toggleSeat = (seat) => {
+    const seatNumber = String(seat);
+
+    // Do not allow booked seats
+    if (show.bookedSeats?.includes(seatNumber)) {
+      return;
+    }
+
     if (selectedSeats.includes(seat)) {
-      setSelectedSeats(selectedSeats.filter((s) => s !== seat));
+      setSelectedSeats(
+        selectedSeats.filter((s) => s !== seat)
+      );
     } else {
-      setSelectedSeats([...selectedSeats, seat]);
+      setSelectedSeats([
+        ...selectedSeats,
+        seat,
+      ]);
     }
   };
 
   if (!show) {
     return (
-      <h2 style={{ textAlign: "center", marginTop: "50px" }}>
+      <h2
+        style={{
+          textAlign: "center",
+          marginTop: "50px",
+        }}
+      >
         Loading...
       </h2>
     );
   }
 
-  const seats = Array.from({ length: 50 }, (_, i) => i + 1);
+  const seats = Array.from(
+    { length: 50 },
+    (_, i) => i + 1
+  );
 
   return (
     <div style={{ padding: "30px" }}>
@@ -51,67 +71,171 @@ function SeatSelection() {
       <h3>{show.movie?.title}</h3>
 
       <p>
-        <strong>Time:</strong> {show.showTime}
+        <strong>Time:</strong>{" "}
+        {show.showTime}
       </p>
 
       <p>
-        <strong>Ticket Price:</strong> ₹{show.ticketPrice}
+        <strong>Ticket Price:</strong> ₹
+        {show.ticketPrice}
       </p>
+
+      <p>
+        <strong>Available Seats:</strong>{" "}
+        {show.availableSeats}
+      </p>
+
+      {/* LEGEND */}
+
+      <div
+        style={{
+          display: "flex",
+          gap: "15px",
+          marginTop: "25px",
+          marginBottom: "35px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            background: "#ddd",
+            padding: "12px 20px",
+            borderRadius: "6px",
+          }}
+        >
+          Available
+        </div>
+
+        <div
+          style={{
+            background: "#16a34a",
+            color: "white",
+            padding: "12px 20px",
+            borderRadius: "6px",
+          }}
+        >
+          Selected
+        </div>
+
+        <div
+          style={{
+            background: "#dc2626",
+            color: "white",
+            padding: "12px 20px",
+            borderRadius: "6px",
+          }}
+        >
+          Booked
+        </div>
+      </div>
+
+      {/* SEATS */}
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(10,60px)",
+          gridTemplateColumns:
+            "repeat(10, 60px)",
           gap: "10px",
-          marginTop: "30px",
+          marginTop: "20px",
         }}
       >
-        {seats.map((seat) => (
-          <button
-            key={seat}
-            onClick={() => toggleSeat(seat)}
-            style={{
-              padding: "12px",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              background: selectedSeats.includes(seat)
-                ? "#16a34a"
-                : "#ddd",
-            }}
-          >
-            {seat}
-          </button>
-        ))}
+        {seats.map((seat) => {
+          const isBooked =
+            show.bookedSeats?.includes(
+              String(seat)
+            );
+
+          const isSelected =
+            selectedSeats.includes(seat);
+
+          return (
+            <button
+              key={seat}
+              onClick={() =>
+                toggleSeat(seat)
+              }
+              disabled={isBooked}
+              style={{
+                padding: "12px",
+                border: "none",
+                borderRadius: "6px",
+                cursor: isBooked
+                  ? "not-allowed"
+                  : "pointer",
+
+                color:
+                  isSelected || isBooked
+                    ? "white"
+                    : "black",
+
+                background: isBooked
+                  ? "#dc2626"
+                  : isSelected
+                  ? "#16a34a"
+                  : "#ddd",
+
+                fontWeight: "500",
+              }}
+            >
+              {seat}
+            </button>
+          );
+        })}
       </div>
 
+      {/* SELECTED SEATS */}
+
       <h3 style={{ marginTop: "30px" }}>
-        Selected Seats: {selectedSeats.join(", ") || "None"}
+        Selected Seats:{" "}
+        {selectedSeats.length > 0
+          ? selectedSeats.join(", ")
+          : "None"}
       </h3>
 
+      {/* TOTAL */}
+
       <h2>
-        Total: ₹{selectedSeats.length * show.ticketPrice}
+        Total: ₹
+        {selectedSeats.length *
+          show.ticketPrice}
       </h2>
 
+      {/* PAYMENT */}
+
       <button
-        disabled={selectedSeats.length === 0}
-        onClick={() =>
-          navigate("/payment", {
-            state: {
-              show,
-              seats: selectedSeats,
-              total: selectedSeats.length * show.ticketPrice,
-            },
-          })
+        disabled={
+          selectedSeats.length === 0
         }
+    onClick={() =>
+  navigate("/payment", {
+    state: {
+      showId: show._id,
+      seats: selectedSeats,
+      totalAmount:
+        selectedSeats.length * show.ticketPrice,
+      movieTitle: show.movie?.title,
+      showTime: show.showTime,
+      showDate: show.showDate,
+      ticketPrice: show.ticketPrice,
+    },
+  })
+}
         style={{
           padding: "15px 30px",
           marginTop: "20px",
-          background: "#2563eb",
+          background:
+            selectedSeats.length === 0
+              ? "#aaa"
+              : "#2563eb",
           color: "#fff",
           border: "none",
           borderRadius: "6px",
-          cursor: "pointer",
+          cursor:
+            selectedSeats.length === 0
+              ? "not-allowed"
+              : "pointer",
+          fontSize: "16px",
         }}
       >
         Continue to Payment

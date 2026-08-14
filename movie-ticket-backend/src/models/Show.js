@@ -31,10 +31,15 @@ const showSchema = new mongoose.Schema(
     },
 
     availableSeats: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
+  type: Number,
+  required: true,
+  min: 0,
+},
+
+bookedSeats: {
+  type: [String],
+  default: [],
+},
 
     status: {
       type: String,

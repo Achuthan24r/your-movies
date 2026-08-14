@@ -3,40 +3,25 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  addShow,
   getShows,
-  getShowById,
+  getShowsByMovie,
   getShowsByMovieAndTheatre,
+  getShowById,
 } = require("../controllers/showController");
 
-const protect = require("../middleware/authMiddleware");
-const admin = require("../middleware/adminMiddleware");
+// Get all shows
+router.get("/", getShows);
 
-// =====================================================
-// GET SHOWS BY MOVIE + THEATRE
-// =====================================================
+// Get shows for a movie
+router.get("/movie/:movieId", getShowsByMovie);
 
+// Get shows for a movie + theatre
 router.get(
   "/movie/:movieId/theatre/:theatreId",
   getShowsByMovieAndTheatre
 );
 
-// =====================================================
-// GET SINGLE SHOW
-// =====================================================
-
-router.get("/:id", getShowById);
-
-// =====================================================
-// GET ALL SHOWS
-// =====================================================
-
-router.get("/", getShows);
-
-// =====================================================
-// ADD SHOW - ADMIN ONLY
-// =====================================================
-
-router.post("/", protect, admin, addShow);
+// Get one show
+router.get("/:showId", getShowById);
 
 module.exports = router;
