@@ -14,16 +14,30 @@ const admin = require("../middleware/adminMiddleware");
 // ========================================
 // ADMIN - ADD THEATRE
 // ========================================
-router.post("/", protect, admin, addTheatre);
+
+router.post(
+  "/",
+  protect,
+  admin,
+  addTheatre
+);
 
 // ========================================
 // PUBLIC - GET ALL THEATRES
 // ========================================
-router.get("/", getTheatres);
+
+router.get(
+  "/",
+  getTheatres
+);
 
 // ========================================
 // PUBLIC - GET THEATRES FOR MOVIE
 // ========================================
-router.get("/movie/:movieId", getTheatresByMovie);
+
+router.get(
+  "/movie/:movieId",
+  getTheatresByMovie
+);
 
 module.exports = router;

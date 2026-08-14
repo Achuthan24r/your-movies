@@ -4,24 +4,34 @@ const theatreSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      required: true,
+      trim: true,
     },
+
     city: {
       type: String,
-      required: true
+      required: true,
+      trim: true,
     },
+
     address: {
       type: String,
-      required: true
+      required: true,
+      trim: true,
     },
+
     totalSeats: {
       type: Number,
-      required: true
-    }
+      required: true,
+      min: 1,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
-module.exports = mongoose.model("Theatre", theatreSchema);
+module.exports = mongoose.model(
+  "Theatre",
+  theatreSchema
+);

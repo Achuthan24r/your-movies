@@ -1,9 +1,10 @@
-```jsx
 import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 
-// User pages
+// ===============================
+// USER PAGES
+// ===============================
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -17,13 +18,14 @@ import Ticket from "./pages/Ticket";
 import MyBookings from "./pages/MyBookings";
 import Profile from "./pages/Profile";
 
-// Admin pages
-import Dashboard from "./admin/Dashboard";
-import AddMovie from "./admin/AddMovie";
-import AddTheatre from "./admin/AddTheatre";
-import AddShow from "./admin/AddShow";
-import AdminBookings from "./admin/Bookings";
-
+// ===============================
+// ADMIN PAGES
+// ===============================
+import Dashboard from "./pages/admin/Dashboard";
+import AddMovie from "./pages/admin/AddMovie";
+import AddTheatre from "./pages/admin/AddTheatre";
+import AddShow from "./pages/admin/AddShow";
+import AdminBookings from "./pages/admin/Bookings";
 function App() {
   return (
     <>
@@ -31,9 +33,9 @@ function App() {
 
       <Routes>
 
-        {/* ========================= */}
-        {/* USER ROUTES */}
-        {/* ========================= */}
+        {/* ===============================
+            USER ROUTES
+        =============================== */}
 
         <Route
           path="/"
@@ -95,10 +97,9 @@ function App() {
           element={<Profile />}
         />
 
-
-        {/* ========================= */}
-        {/* ADMIN ROUTES */}
-        {/* ========================= */}
+        {/* ===============================
+            ADMIN ROUTES
+        =============================== */}
 
         <Route
           path="/admin/dashboard"
@@ -131,4 +132,3 @@ function App() {
 }
 
 export default App;
-```

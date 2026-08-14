@@ -6,6 +6,7 @@ function AddTheatre() {
     name: "",
     city: "",
     address: "",
+    totalSeats: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -20,10 +21,30 @@ function AddTheatre() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (
+      !formData.name.trim() ||
+      !formData.city.trim() ||
+      !formData.address.trim() ||
+      !formData.totalSeats
+    ) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    if (Number(formData.totalSeats) <= 0) {
+      alert("Total seats must be greater than 0");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await API.post("/theatres", formData);
+      const res = await API.post("/theatres", {
+        name: formData.name.trim(),
+        city: formData.city.trim(),
+        address: formData.address.trim(),
+        totalSeats: Number(formData.totalSeats),
+      });
 
       if (res.data.success) {
         alert("Theatre added successfully!");
@@ -32,10 +53,16 @@ function AddTheatre() {
           name: "",
           city: "",
           address: "",
+          totalSeats: "",
         });
       }
     } catch (error) {
       console.error("Add Theatre Error:", error);
+
+      console.error(
+        "Backend response:",
+        error.response?.data
+      );
 
       alert(
         error.response?.data?.message ||
@@ -52,8 +79,6 @@ function AddTheatre() {
         maxWidth: "600px",
         margin: "40px auto",
         padding: "30px",
-        border: "1px solid #ddd",
-        borderRadius: "10px",
       }}
     >
       <h1>🏢 Add Theatre</h1>
@@ -99,6 +124,22 @@ function AddTheatre() {
           style={{
             width: "100%",
             padding: "12px",
+            marginBottom: "15px",
+            boxSizing: "border-box",
+          }}
+        />
+
+        <input
+          type="number"
+          name="totalSeats"
+          placeholder="Total Seats"
+          value={formData.totalSeats}
+          onChange={handleChange}
+          min="1"
+          required
+          style={{
+            width: "100%",
+            padding: "12px",
             marginBottom: "20px",
             boxSizing: "border-box",
           }}
@@ -110,11 +151,16 @@ function AddTheatre() {
           style={{
             width: "100%",
             padding: "12px",
-            background: "#2563eb",
+            background: loading
+              ? "#999"
+              : "#2563eb",
             color: "#fff",
             border: "none",
             borderRadius: "5px",
-            cursor: "pointer",
+            cursor: loading
+              ? "not-allowed"
+              : "pointer",
+            fontSize: "16px",
           }}
         >
           {loading ? "Adding..." : "Add Theatre"}
