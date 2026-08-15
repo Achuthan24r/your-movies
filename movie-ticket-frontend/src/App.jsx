@@ -26,7 +26,7 @@ import AddMovie from "./pages/admin/AddMovie";
 import AddTheatre from "./pages/admin/AddTheatre";
 import AddShow from "./pages/admin/AddShow";
 import AdminBookings from "./pages/admin/Bookings";
-function App() {
+function App()  {
   return (
     <>
       <Navbar />
