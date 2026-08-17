@@ -19,31 +19,29 @@ const showSchema = new mongoose.Schema(
       required: true,
     },
 
-    showTime: {
+    startTime: {
       type: String,
       required: true,
     },
 
-    ticketPrice: {
+    endTime: {
+      type: String,
+      required: true,
+    },
+
+    price: {
       type: Number,
       required: true,
-      min: 0,
     },
 
     availableSeats: {
-  type: Number,
-  required: true,
-  min: 0,
-},
-
-bookedSeats: {
-  type: [String],
-  default: [],
-},
+      type: Number,
+      required: true,
+    },
 
     status: {
       type: String,
-      enum: ["Active", "Available", "Cancelled"],
+      enum: ["Active", "Available", "Cancelled", "Completed"],
       default: "Active",
     },
   },

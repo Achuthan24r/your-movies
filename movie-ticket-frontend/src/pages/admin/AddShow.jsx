@@ -15,23 +15,57 @@ function AddShow() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     let ignore = false;
 
     const loadData = async () => {
       try {
+        setLoadingData(true);
+
         const [moviesRes, screensRes] = await Promise.all([
           API.get("/movies"),
           API.get("/screens"),
         ]);
 
+        console.log("MOVIES API RESPONSE:", moviesRes.data);
+        console.log("SCREENS API RESPONSE:", screensRes.data);
+
         if (ignore) return;
 
-        setMovies(moviesRes.data.data || []);
-        setScreens(screensRes.data.data || []);
+        // Get movies from different possible API response formats
+        const movieData =
+          Array.isArray(moviesRes.data)
+            ? moviesRes.data
+            : moviesRes.data?.data ||
+              moviesRes.data?.movies ||
+              [];
+
+        // Get screens from different possible API response formats
+        const screenData =
+          Array.isArray(screensRes.data)
+            ? screensRes.data
+            : screensRes.data?.data ||
+              screensRes.data?.screens ||
+              [];
+
+        console.log("MOVIES USED:", movieData);
+        console.log("SCREENS USED:", screenData);
+
+        setMovies(movieData);
+        setScreens(screenData);
       } catch (error) {
-        console.error("Error loading data:", error);
+        console.error("Error loading movies and screens:", error);
+
+        if (!ignore) {
+          setMovies([]);
+          setScreens([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoadingData(false);
+        }
       }
     };
 
@@ -43,10 +77,12 @@ function AddShow() {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -75,6 +111,8 @@ function AddShow() {
           ticketPrice: "",
           availableSeats: "",
         });
+      } else {
+        alert(res.data.message || "Failed to add show");
       }
     } catch (error) {
       console.error("Add Show Error:", error);
@@ -101,19 +139,26 @@ function AddShow() {
       <h1>🎬 Add Show</h1>
 
       <form onSubmit={handleSubmit}>
+
         {/* Movie */}
         <select
           name="movie"
           value={formData.movie}
           onChange={handleChange}
           required
+          disabled={loadingData}
           style={{
             width: "100%",
             padding: "12px",
             marginBottom: "15px",
+            boxSizing: "border-box",
           }}
         >
-          <option value="">Select Movie</option>
+          <option value="">
+            {loadingData
+              ? "Loading Movies..."
+              : "Select Movie"}
+          </option>
 
           {movies.map((movie) => (
             <option
@@ -131,13 +176,19 @@ function AddShow() {
           value={formData.screen}
           onChange={handleChange}
           required
+          disabled={loadingData}
           style={{
             width: "100%",
             padding: "12px",
             marginBottom: "15px",
+            boxSizing: "border-box",
           }}
         >
-          <option value="">Select Screen</option>
+          <option value="">
+            {loadingData
+              ? "Loading Screens..."
+              : "Select Screen"}
+          </option>
 
           {screens.map((screen) => (
             <option
@@ -213,17 +264,24 @@ function AddShow() {
           }}
         />
 
+        {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || loadingData}
           style={{
             width: "100%",
             padding: "12px",
-            background: "#2563eb",
+            background:
+              loading || loadingData
+                ? "#9ca3af"
+                : "#2563eb",
             color: "#fff",
             border: "none",
             borderRadius: "5px",
-            cursor: "pointer",
+            cursor:
+              loading || loadingData
+                ? "not-allowed"
+                : "pointer",
           }}
         >
           {loading ? "Adding..." : "Add Show"}

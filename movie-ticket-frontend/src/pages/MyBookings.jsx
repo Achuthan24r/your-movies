@@ -6,6 +6,10 @@ function MyBookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ======================================================
+  // FETCH MY BOOKINGS
+  // ======================================================
+
   const fetchBookings = async () => {
     try {
       setLoading(true);
@@ -18,7 +22,9 @@ function MyBookings() {
       if (res.data.success) {
         setBookings(res.data.data || []);
       } else {
-        setError(res.data.message || "Failed to load bookings");
+        setError(
+          res.data.message || "Failed to load bookings"
+        );
       }
     } catch (err) {
       console.error("Fetch Booking Error:", err);
@@ -32,13 +38,58 @@ function MyBookings() {
     }
   };
 
- useEffect(() => {
+  // ======================================================
+  // LOAD BOOKINGS
+  // ======================================================
+
+  useEffect(() => {
+  let cancelled = false;
+
   const loadBookings = async () => {
-    await fetchBookings();
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await API.get("/bookings/my");
+
+      console.log("MY BOOKINGS RESPONSE:", res.data);
+
+      if (!cancelled) {
+        if (res.data.success) {
+          setBookings(res.data.data || []);
+        } else {
+          setError(
+            res.data.message ||
+              "Failed to load bookings"
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Fetch Booking Error:", err);
+
+      if (!cancelled) {
+        setError(
+          err.response?.data?.message ||
+            "Failed to fetch bookings"
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
   };
 
   loadBookings();
+
+  return () => {
+    cancelled = true;
+  };
 }, []);
+
+  // ======================================================
+  // CANCEL BOOKING
+  // ======================================================
 
   const handleCancel = async (bookingId) => {
     const confirmCancel = window.confirm(
@@ -54,11 +105,13 @@ function MyBookings() {
         `/bookings/cancel/${bookingId}`
       );
 
+      console.log("CANCEL RESPONSE:", res.data);
+
       if (res.data.success) {
         alert("Booking cancelled successfully");
 
         // Refresh bookings
-        fetchBookings();
+        await fetchBookings();
       } else {
         alert(
           res.data.message ||
@@ -75,6 +128,10 @@ function MyBookings() {
     }
   };
 
+  // ======================================================
+  // LOADING
+  // ======================================================
+
   if (loading) {
     return (
       <div
@@ -87,6 +144,10 @@ function MyBookings() {
       </div>
     );
   }
+
+  // ======================================================
+  // ERROR
+  // ======================================================
 
   if (error) {
     return (
@@ -109,6 +170,10 @@ function MyBookings() {
     );
   }
 
+  // ======================================================
+  // NO BOOKINGS
+  // ======================================================
+
   if (bookings.length === 0) {
     return (
       <div
@@ -117,7 +182,7 @@ function MyBookings() {
           marginTop: "50px",
         }}
       >
-        <h2>No Bookings Found</h2>
+        <h2>🎟️ No Bookings Found</h2>
 
         <p>
           You haven't booked any tickets yet.
@@ -125,6 +190,10 @@ function MyBookings() {
       </div>
     );
   }
+
+  // ======================================================
+  // BOOKINGS
+  // ======================================================
 
   return (
     <div
@@ -145,10 +214,9 @@ function MyBookings() {
 
       {bookings.map((booking) => {
         const show = booking.show;
-
         const movie = show?.movie;
-
         const screen = show?.screen;
+        const theatre = screen?.theatre;
 
         return (
           <div
@@ -163,7 +231,10 @@ function MyBookings() {
               background: "#fff",
             }}
           >
-            {/* Movie */}
+            {/* ==================================================
+                MOVIE
+            ================================================== */}
+
             <h2
               style={{
                 marginTop: 0,
@@ -173,16 +244,21 @@ function MyBookings() {
               🎬 {movie?.title || "Movie"}
             </h2>
 
-            {/* Theatre / Screen */}
+            {/* ==================================================
+                THEATRE
+            ================================================== */}
+
             <p>
               <strong>Theatre:</strong>{" "}
-              {screen?.theatre?.name ||
+              {theatre?.name ||
                 screen?.theatreName ||
-                screen?.name ||
                 "Theatre"}
             </p>
 
-            {/* Screen */}
+            {/* ==================================================
+                SCREEN
+            ================================================== */}
+
             {screen?.name && (
               <p>
                 <strong>Screen:</strong>{" "}
@@ -190,23 +266,39 @@ function MyBookings() {
               </p>
             )}
 
-            {/* Show Date */}
+            {/* ==================================================
+                SHOW DATE
+            ================================================== */}
+
             {show?.showDate && (
               <p>
                 <strong>Show Date:</strong>{" "}
                 {new Date(
                   show.showDate
-                ).toLocaleDateString()}
+                ).toLocaleDateString("en-IN")}
               </p>
             )}
 
-            {/* Show Time */}
+            {/* ==================================================
+                SHOW TIME
+            ================================================== */}
+
             <p>
               <strong>Show Time:</strong>{" "}
-              {show?.showTime || "N/A"}
+              {show?.startTime || "N/A"}
+
+              {show?.endTime && (
+                <>
+                  {" - "}
+                  {show.endTime}
+                </>
+              )}
             </p>
 
-            {/* Seats */}
+            {/* ==================================================
+                SEATS
+            ================================================== */}
+
             <p>
               <strong>Seats:</strong>{" "}
               {Array.isArray(booking.seats)
@@ -214,21 +306,31 @@ function MyBookings() {
                 : "N/A"}
             </p>
 
-            {/* Total Seats */}
+            {/* ==================================================
+                TOTAL SEATS
+            ================================================== */}
+
             <p>
               <strong>Total Seats:</strong>{" "}
               {booking.seats?.length || 0}
             </p>
 
-            {/* Amount */}
+            {/* ==================================================
+                AMOUNT
+            ================================================== */}
+
             <p>
               <strong>Total Amount:</strong>{" "}
               ₹{booking.totalAmount || 0}
             </p>
 
-            {/* Status */}
+            {/* ==================================================
+                STATUS
+            ================================================== */}
+
             <p>
               <strong>Status:</strong>{" "}
+
               <span
                 style={{
                   fontWeight: "bold",
@@ -243,14 +345,27 @@ function MyBookings() {
               </span>
             </p>
 
-            {/* Cancel */}
-            {booking.status !==
-              "Cancelled" && (
+            {/* ==================================================
+                BOOKING DATE
+            ================================================== */}
+
+            {booking.createdAt && (
+              <p>
+                <strong>Booked On:</strong>{" "}
+                {new Date(
+                  booking.createdAt
+                ).toLocaleString("en-IN")}
+              </p>
+            )}
+
+            {/* ==================================================
+                CANCEL BUTTON
+            ================================================== */}
+
+            {booking.status !== "Cancelled" && (
               <button
                 onClick={() =>
-                  handleCancel(
-                    booking._id
-                  )
+                  handleCancel(booking._id)
                 }
                 style={{
                   marginTop: "15px",
@@ -265,6 +380,22 @@ function MyBookings() {
               >
                 Cancel Booking
               </button>
+            )}
+
+            {/* ==================================================
+                CANCELLED MESSAGE
+            ================================================== */}
+
+            {booking.status === "Cancelled" && (
+              <p
+                style={{
+                  marginTop: "15px",
+                  color: "red",
+                  fontWeight: "bold",
+                }}
+              >
+                ❌ This booking has been cancelled.
+              </p>
             )}
           </div>
         );
