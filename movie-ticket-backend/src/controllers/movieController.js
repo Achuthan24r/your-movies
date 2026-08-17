@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Movie = require("../models/Movie");
 
 // ========================================
@@ -32,7 +33,16 @@ const getMovies = async (req, res) => {
 
 const getMovieById = async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid movie ID",
+      });
+    }
+
+    const movie = await Movie.findById(id);
 
     if (!movie) {
       return res.status(404).json({
@@ -81,7 +91,7 @@ const addMovie = async (req, res) => {
       !description ||
       !genre ||
       !language ||
-      !duration ||
+      duration === undefined ||
       !releaseDate
     ) {
       return res.status(400).json({
@@ -91,17 +101,46 @@ const addMovie = async (req, res) => {
       });
     }
 
-    // Create movie
+    // Validate duration
+    if (Number(duration) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Duration must be greater than 0",
+      });
+    }
+
+    // Validate rating
+    if (
+      rating !== undefined &&
+      (Number(rating) < 0 || Number(rating) > 10)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating must be between 0 and 10",
+      });
+    }
+
+    // Validate release date
+    if (isNaN(new Date(releaseDate).getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid release date",
+      });
+    }
+
     const movie = await Movie.create({
-      title,
-      description,
-      genre,
-      language,
-      duration,
+      title: title.trim(),
+      description: description.trim(),
+      genre: genre.trim(),
+      language: language.trim(),
+      duration: Number(duration),
       releaseDate,
-      poster,
-      trailer,
-      rating: rating || 0,
+      poster: poster?.trim() || "",
+      trailer: trailer?.trim() || "",
+      rating:
+        rating !== undefined
+          ? Number(rating)
+          : 0,
       status: status || "Coming Soon",
     });
 
@@ -129,6 +168,13 @@ const updateMovie = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid movie ID",
+      });
+    }
+
     const movie = await Movie.findById(id);
 
     if (!movie) {
@@ -151,55 +197,69 @@ const updateMovie = async (req, res) => {
       status,
     } = req.body;
 
-    movie.title =
-      title !== undefined
-        ? title
-        : movie.title;
+    if (title !== undefined) {
+      movie.title = title.trim();
+    }
 
-    movie.description =
-      description !== undefined
-        ? description
-        : movie.description;
+    if (description !== undefined) {
+      movie.description = description.trim();
+    }
 
-    movie.genre =
-      genre !== undefined
-        ? genre
-        : movie.genre;
+    if (genre !== undefined) {
+      movie.genre = genre.trim();
+    }
 
-    movie.language =
-      language !== undefined
-        ? language
-        : movie.language;
+    if (language !== undefined) {
+      movie.language = language.trim();
+    }
 
-    movie.duration =
-      duration !== undefined
-        ? duration
-        : movie.duration;
+    if (duration !== undefined) {
+      if (Number(duration) <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Duration must be greater than 0",
+        });
+      }
 
-    movie.releaseDate =
-      releaseDate !== undefined
-        ? releaseDate
-        : movie.releaseDate;
+      movie.duration = Number(duration);
+    }
 
-    movie.poster =
-      poster !== undefined
-        ? poster
-        : movie.poster;
+    if (releaseDate !== undefined) {
+      if (isNaN(new Date(releaseDate).getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid release date",
+        });
+      }
 
-    movie.trailer =
-      trailer !== undefined
-        ? trailer
-        : movie.trailer;
+      movie.releaseDate = releaseDate;
+    }
 
-    movie.rating =
-      rating !== undefined
-        ? rating
-        : movie.rating;
+    if (poster !== undefined) {
+      movie.poster = poster.trim();
+    }
 
-    movie.status =
-      status !== undefined
-        ? status
-        : movie.status;
+    if (trailer !== undefined) {
+      movie.trailer = trailer.trim();
+    }
+
+    if (rating !== undefined) {
+      if (
+        Number(rating) < 0 ||
+        Number(rating) > 10
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Rating must be between 0 and 10",
+        });
+      }
+
+      movie.rating = Number(rating);
+    }
+
+    if (status !== undefined) {
+      movie.status = status;
+    }
 
     await movie.save();
 
@@ -227,6 +287,13 @@ const deleteMovie = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid movie ID",
+      });
+    }
+
     const movie = await Movie.findById(id);
 
     if (!movie) {
@@ -251,10 +318,6 @@ const deleteMovie = async (req, res) => {
     });
   }
 };
-
-// ========================================
-// EXPORTS
-// ========================================
 
 module.exports = {
   getMovies,

@@ -17,17 +17,14 @@ const admin = require("../middleware/adminMiddleware");
 // PUBLIC ROUTES
 // ========================================
 
-// Get all movies
 router.get("/", getMovies);
 
-// Get one movie
 router.get("/:id", getMovieById);
 
 // ========================================
 // ADMIN ROUTES
 // ========================================
 
-// Add movie
 router.post(
   "/",
   protect,
@@ -35,7 +32,6 @@ router.post(
   addMovie
 );
 
-// Update movie
 router.put(
   "/:id",
   protect,
@@ -43,7 +39,6 @@ router.put(
   updateMovie
 );
 
-// Delete movie
 router.delete(
   "/:id",
   protect,
