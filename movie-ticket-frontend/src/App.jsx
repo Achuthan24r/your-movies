@@ -2,9 +2,7 @@ import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 
-// ===============================
-// USER PAGES
-// ===============================
+// User pages
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -18,44 +16,29 @@ import Ticket from "./pages/Ticket";
 import MyBookings from "./pages/MyBookings";
 import Profile from "./pages/Profile";
 
-// ===============================
-// ADMIN PAGES
-// ===============================
+// Admin pages
 import Dashboard from "./pages/admin/Dashboard";
 import AddMovie from "./pages/admin/AddMovie";
 import AddTheatre from "./pages/admin/AddTheatre";
 import AddShow from "./pages/admin/AddShow";
 import AdminBookings from "./pages/admin/Bookings";
-function App()  {
+
+function App() {
   return (
     <>
+      {/* ONLY ONE NAVBAR */}
       <Navbar />
 
       <Routes>
+        {/* ================= USER ROUTES ================= */}
 
-        {/* ===============================
-            USER ROUTES
-        =============================== */}
+        <Route path="/" element={<Home />} />
 
-        <Route
-          path="/"
-          element={<Home />}
-        />
+        <Route path="/login" element={<Login />} />
 
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/register" element={<Register />} />
 
-        <Route
-          path="/register"
-          element={<Register />}
-        />
-
-        <Route
-          path="/movies"
-          element={<Movies />}
-        />
+        <Route path="/movies" element={<Movies />} />
 
         <Route
           path="/movie/:id"
@@ -97,9 +80,7 @@ function App()  {
           element={<Profile />}
         />
 
-        {/* ===============================
-            ADMIN ROUTES
-        =============================== */}
+        {/* ================= ADMIN ROUTES ================= */}
 
         <Route
           path="/admin/dashboard"
@@ -125,7 +106,6 @@ function App()  {
           path="/admin/bookings"
           element={<AdminBookings />}
         />
-
       </Routes>
     </>
   );

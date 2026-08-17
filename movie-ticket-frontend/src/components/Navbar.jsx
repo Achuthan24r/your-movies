@@ -8,6 +8,7 @@ function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     navigate("/login");
   };
 
@@ -16,29 +17,34 @@ function Navbar() {
       style={{
         width: "100%",
         height: "70px",
-        background: "#111827",
-        color: "#fff",
+        backgroundColor: "#111827",
+        color: "white",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 30px",
+        padding: "0 40px",
         boxSizing: "border-box",
+        position: "relative",
+        zIndex: 1000,
       }}
     >
-      {/* Logo */}
+      {/* ================= LOGO ================= */}
+
       <Link
         to="/"
         style={{
-          color: "#fff",
+          color: "white",
           textDecoration: "none",
           fontSize: "24px",
-          fontWeight: "bold",
+          fontWeight: "700",
+          whiteSpace: "nowrap",
         }}
       >
-        🎬 Movie Ticket Booking
+        
       </Link>
 
-      {/* Navigation */}
+      {/* ================= MENU ================= */}
+
       <div
         style={{
           display: "flex",
@@ -46,58 +52,30 @@ function Navbar() {
           gap: "25px",
         }}
       >
-        <Link
-          to="/"
-          style={{
-            color: "#fff",
-            textDecoration: "none",
-          }}
-        >
-          Home
-        </Link>
-
-        <Link
-          to="/movies"
-          style={{
-            color: "#fff",
-            textDecoration: "none",
-          }}
-        >
-          Movies
-        </Link>
+       
 
         {token ? (
           <>
-            <Link
-              to="/my-bookings"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-              }}
-            >
-              My Bookings
-            </Link>
+          
 
             <Link
               to="/profile"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-              }}
+              style={linkStyle}
             >
-              Profile
+              👤 Profile
             </Link>
 
             <button
               onClick={handleLogout}
               style={{
-                padding: "9px 16px",
-                background: "#dc2626",
-                color: "#fff",
+                padding: "10px 18px",
+                backgroundColor: "#dc2626",
+                color: "white",
                 border: "none",
                 borderRadius: "6px",
                 cursor: "pointer",
                 fontSize: "15px",
+                fontWeight: "600",
               }}
             >
               Logout
@@ -107,20 +85,14 @@ function Navbar() {
           <>
             <Link
               to="/login"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-              }}
+              style={linkStyle}
             >
               Login
             </Link>
 
             <Link
               to="/register"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-              }}
+              style={linkStyle}
             >
               Register
             </Link>
@@ -130,5 +102,13 @@ function Navbar() {
     </nav>
   );
 }
+
+const linkStyle = {
+  color: "white",
+  textDecoration: "none",
+  fontSize: "16px",
+  fontWeight: "500",
+  whiteSpace: "nowrap",
+};
 
 export default Navbar;
