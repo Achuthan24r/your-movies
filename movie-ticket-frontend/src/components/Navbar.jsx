@@ -108,7 +108,10 @@ const linkStyle = {
   textDecoration: "none",
   fontSize: "16px",
   fontWeight: "500",
-  whiteSpace: "nowrap",
+  whiteSpace: "nowrap"
+  ,
+  border: "3px solid #1d4ed8",
+   margin: "15px", borderRadius: "5px", padding: "10px 15px", backgroundColor: "#2563eb", 
 };
 
 export default Navbar;
